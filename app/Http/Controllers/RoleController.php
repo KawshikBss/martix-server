@@ -54,6 +54,16 @@ class RoleController extends Controller
         return response()->json($role);
     }
 
+    public function destroy(Role $role)
+    {
+        if ($role->is_system_role) {
+            return response()->json(['message' => 'Cannot delete a system role'], 403);
+        }
+
+        $role->delete();
+        return response()->json(['message' => 'Role deleted successfully']);
+    }
+
     public function assign(Request $request)
     {
         $request->validate([
@@ -65,6 +75,19 @@ class RoleController extends Controller
         $role = Role::findOrFail($request->role_id);
 
         $user->assignRole($role->id);
+
+        return response()->json(['message' => 'Role assigned successfully']);
+    }
+
+    public function remove(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+        ]);
+
+        $user = User::findOrFail($request->user_id);
+
+        $user->removeRole();
 
         return response()->json(['message' => 'Role assigned successfully']);
     }
