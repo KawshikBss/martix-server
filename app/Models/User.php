@@ -62,4 +62,18 @@ class User extends Authenticatable
         $this->role_id = $roleId;
         $this->save();
     }
+
+    public function removeRole()
+    {
+        $this->role_id = null;
+        $this->save();
+    }
+
+    public function hasPermission($permissionName)
+    {
+        if ($this->role) {
+            return $this->role->permissions()->where('name', $permissionName)->exists();
+        }
+        return false;
+    }
 }
