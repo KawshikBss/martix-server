@@ -46,4 +46,20 @@ class User extends Authenticatable
             'two_factor_confirmed_at' => 'datetime',
         ];
     }
+
+    public function getUserImageUrl()
+    {
+        return $this->image ? env('APP_URL') . '/storage/' . $this->image : null;
+    }
+
+    public function role()
+    {
+        return $this->belongsTo(Role::class);
+    }
+
+    public function assignRole($roleId)
+    {
+        $this->role_id = $roleId;
+        $this->save();
+    }
 }
