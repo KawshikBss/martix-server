@@ -42,7 +42,7 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        $user['image'] = $imagePath ? env('APP_URL') . '/storage/' . $imagePath : null;
+        $user['image'] = $user->getUserImageUrl();
 
         $token = $user->createToken('api-token')->plainTextToken;
 
@@ -57,9 +57,7 @@ class AuthController extends Controller
             return response(['message' => 'Invalid credentials'], 401);
         }
 
-        $imagePath = $user->image;
-
-        $user['image'] = $imagePath ? env('APP_URL') . '/storage/' . $imagePath : null;
+        $user['image'] = $user->getUserImageUrl();
 
         $token = $user->createToken('api-token')->plainTextToken;
 
@@ -70,9 +68,7 @@ class AuthController extends Controller
     {
         $user = $request->user();
 
-        $imagePath = $user->image;
-
-        $user['image'] = $imagePath ? env('APP_URL') . '/storage/' . $imagePath : null;
+        $user['image'] = $user->getUserImageUrl();
 
         return response()->json($user);
     }
@@ -113,9 +109,7 @@ class AuthController extends Controller
 
         $user->save();
 
-        $imagePath = $user->image;
-
-        $user['image'] = $imagePath ? env('APP_URL') . '/storage/' . $imagePath : null;
+        $user['image'] = $user->getUserImageUrl();
 
         return response()->json($user);
     }
