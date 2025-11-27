@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\Store\CategoryController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/test', function () {
@@ -20,6 +21,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/assign', [RoleController::class, 'assign']);
         Route::post('/remove', [RoleController::class, 'remove']);
     });
+
     Route::group(['prefix' => 'permissions'], function () {
         Route::get('/', [PermissionController::class, 'index']);
         Route::get('/{id}', [PermissionController::class, 'show']);
@@ -28,5 +30,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::delete('/{permission}', [PermissionController::class, 'destroy']);
         Route::post('/assign-to-role', [PermissionController::class, 'assignToRole']);
         Route::post('/remove-from-role', [PermissionController::class, 'removeFromRole']);
+    });
+
+    Route::group(['prefix' => 'categories'], function () {
+        Route::get('/', [CategoryController::class, 'index']);
+        Route::get('/{id}', [CategoryController::class, 'show']);
+        Route::post('/', [CategoryController::class, 'store']);
+        Route::post('/update/{category}', [CategoryController::class, 'update']);
+        Route::delete('/{category}', [CategoryController::class, 'destroy']);
     });
 });
