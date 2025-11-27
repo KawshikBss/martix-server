@@ -76,4 +76,9 @@ class User extends Authenticatable
         }
         return false;
     }
+
+    public function categories()
+    {
+        return $this->hasMany(Category::class, 'owner_id');
+    }
 }
