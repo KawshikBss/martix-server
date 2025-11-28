@@ -77,6 +77,11 @@ class User extends Authenticatable
         return false;
     }
 
+    public function stores()
+    {
+        return $this->hasMany(Store::class, 'owner_id');
+    }
+
     public function categories()
     {
         return $this->hasMany(Category::class, 'owner_id');
