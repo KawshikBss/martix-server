@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Store;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\Store;
 use Illuminate\Http\Request;
 
 class CategoryController extends Controller
@@ -11,7 +12,16 @@ class CategoryController extends Controller
     public function index()
     {
         $user = auth()->user();
-        $categories = $user->categories()->with('children')->get();
+        
+        $storeIds = $user->stores->pluck('id')->toArray();
+        $managerStoreIds = Store::where('manager_id', $user->id)->pluck('id')->toArray();
+        $storeIds = array_merge($storeIds, $managerStoreIds);
+
+        $categories = Category::where(function ($q) use ($storeIds) {
+            foreach ($storeIds as $storeId) {
+                $q->orWhereJsonContains('visible_stores', $storeId);
+            }
+        })->orWhere('owner_id', $user->id)->with('children')->get();
         return response()->json($categories);
     }
 
@@ -41,12 +51,14 @@ class CategoryController extends Controller
             $imagePath = null;
         }
 
+        $visibleStores = $request->input('visible_stores', []);
+
         $category = $user->categories()->create([
             'name' => $request->name,
             'slug' => $request->slug,
             'image' => $imagePath,
             'parent_id' => $request->parent_id,
-            'visible_stores' => $request->visible_stores,
+            'visible_stores' => json_encode($visibleStores),
             'status' => $request->get('status', 'active'),
         ]);
 
@@ -78,12 +90,14 @@ class CategoryController extends Controller
             $imagePath = null;
         }
 
+        $visibleStores = $request->input('visible_stores', $category->visible_stores);
+
         $category->update([
             'name' => $request->name,
             'slug' => $request->slug,
             'image' => $imagePath,
             'parent_id' => $request->parent_id,
-            'visible_stores' => $request->visible_stores,
+            'visible_stores' => json_encode($visibleStores),
             'status' => $request->get('status', $category->status),
         ]);
 
