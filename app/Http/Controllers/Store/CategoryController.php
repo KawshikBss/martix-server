@@ -12,7 +12,7 @@ class CategoryController extends Controller
     public function index()
     {
         $user = auth()->user();
-        
+
         $storeIds = $user->stores->pluck('id')->toArray();
         $managerStoreIds = Store::where('manager_id', $user->id)->pluck('id')->toArray();
         $storeIds = array_merge($storeIds, $managerStoreIds);
@@ -39,7 +39,7 @@ class CategoryController extends Controller
         $request->validate([
             'name' => 'required|string',
             'slug' => 'nullable|string|unique:categories,slug',
-            'image' => 'nullable|string',
+            'image' => 'nullable|image|max:2048',
             'parent_id' => 'nullable|exists:categories,id',
             'visible_stores' => 'nullable|array',
             'status' => 'sometimes|in:active,inactive',
@@ -78,7 +78,7 @@ class CategoryController extends Controller
         $request->validate([
             'name' => 'required|string',
             'slug' => 'nullable|string|unique:categories,slug,' . $category->id,
-            'image' => 'nullable|string',
+            'image' => 'nullable|image|max:2048',
             'parent_id' => 'nullable|exists:categories,id',
             'visible_stores' => 'nullable|array',
             'status' => 'sometimes|in:active,inactive',
