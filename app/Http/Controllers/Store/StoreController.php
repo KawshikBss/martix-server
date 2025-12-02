@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Store;
 
 use App\Http\Controllers\Controller;
+use App\Models\Store;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class StoreController extends Controller
 {
@@ -66,5 +68,27 @@ class StoreController extends Controller
         $store = $user->stores()->findOrFail($id);
         $store->delete();
         return response()->json(null, 204);
+    }
+
+    public function addProduct(Request $request, Store $store)
+    {
+        $user = auth()->user();
+
+        $data = $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'stock_quantity' => 'required|integer|min:0',
+            'low_stock_level' => 'required|integer|min:0',
+            'selling_price' => 'required|numeric|min:0',
+            'tax_type' => 'nullable|string',
+            'tax_value' => 'nullable|numeric|min:0',
+            'expiry_date' => 'nullable|date',
+            'is_active' => 'sometimes|boolean',
+        ]);
+
+        $data['store_id'] = $store->id;
+
+        DB::table('store_products')->insert($data);
+
+        return response()->json(['message' => 'Product added to store inventory', 'data' => $data], 200);
     }
 }
