@@ -13,7 +13,7 @@ class PermissionMiddleware
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
-    public function handle(Request $request, Closure $next, $permission): Response
+    public function handle(Request $request, Closure $next, $permission = null): Response
     {
         if (!auth()->user() || !auth()->user()->hasPermission($permission)) {
             return response()->json(['message' => 'Forbidden'], 403);
