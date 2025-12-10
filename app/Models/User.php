@@ -3,6 +3,8 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+
+use App\Models\Store\Product;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -80,6 +82,11 @@ class User extends Authenticatable
     public function stores()
     {
         return $this->hasMany(Store::class, 'owner_id');
+    }
+
+    public function products()
+    {
+        return $this->hasMany(Product::class, 'owner_id');
     }
 
     public function categories()

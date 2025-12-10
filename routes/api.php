@@ -3,6 +3,7 @@
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\Store\CategoryController;
+use App\Http\Controllers\Store\ProductController;
 use App\Http\Controllers\Store\StoreController;
 use Illuminate\Support\Facades\Route;
 
@@ -47,5 +48,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/', [StoreController::class, 'store']);
         Route::post('/update/{id}', [StoreController::class, 'update']);
         Route::delete('/{id}', [StoreController::class, 'destroy']);
+        Route::post('/{store}/products/add', [StoreController::class, 'addProduct']);
+    });
+
+    Route::group(['prefix' => 'products'], function () {
+        Route::get('/', [ProductController::class, 'index']);
+        Route::get('/{id}', [ProductController::class, 'show']);
+        Route::post('/', [ProductController::class, 'store']);
+        Route::post('/update/{id}', [ProductController::class, 'update']);
+        Route::delete('/{id}', [ProductController::class, 'destroy']);
     });
 });
