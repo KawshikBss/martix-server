@@ -54,7 +54,7 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
-            return response(['message' => 'Invalid credentials'], 401);
+            return response(['error' => 'Invalid credentials'], 401);
         }
 
         $user['image'] = $user->getUserImageUrl();
@@ -110,7 +110,27 @@ class AuthController extends Controller
         $user->save();
 
         $user['image'] = $user->getUserImageUrl();
+        $user->load('role');
 
         return response()->json($user);
+    }
+
+    public function updatePassword(Request $request)
+    {
+        $user = $request->user();
+
+        $request->validate([
+            'current_password' => 'required',
+            'new_password' => 'required|min:8',
+        ]);
+
+        if (! Hash::check($request->current_password, $user->password)) {
+            return response()->json(['error' => 'Current password is incorrect'], 400);
+        }
+
+        $user->password = Hash::make($request->new_password);
+        $user->save();
+
+        return response()->json(['message' => 'Password updated successfully']);
     }
 }

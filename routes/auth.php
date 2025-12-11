@@ -13,4 +13,5 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/user', [AuthController::class, 'getUser']);
     Route::post('/user-update', [AuthController::class, 'updateUser']);
+    Route::post('/password-update', [AuthController::class, 'updatePassword']);
 });
