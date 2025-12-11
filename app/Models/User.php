@@ -51,7 +51,7 @@ class User extends Authenticatable
 
     public function getUserImageUrl()
     {
-        return $this->image ? env('APP_URL') . '/storage/' . $this->image : null;
+        return  env('APP_URL') . '/storage/' . ($this->image ? $this->image : 'profiles/default-user.png');
     }
 
     public function role()
