@@ -13,10 +13,11 @@ class Category extends Model
     ];
 
     // protected $appends = ['visible_to_stores'];
+    protected $appends = ['image_url'];
 
-    public function getImageUrl()
+    public function getImageUrlAttribute(): string
     {
-        return $this->image ? env('APP_URL') . '/storage/' . $this->image : null;
+        return  env('APP_URL') . '/storage/' . ($this->image ? $this->image : 'profiles/default-user.png');
     }
 
     public function parent()
@@ -26,7 +27,7 @@ class Category extends Model
 
     public function children()
     {
-        return $this->hasMany(Category::class, 'parent_id');
+        return $this->hasMany(Category::class, 'parent_id')->with('children');
     }
 
     public function owner()
