@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 
 class CategoryController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
 
@@ -21,7 +21,12 @@ class CategoryController extends Controller
             foreach ($storeIds as $storeId) {
                 $q->orWhereJsonContains('visible_stores', $storeId);
             }
-        })->orWhere('owner_id', $user->id)->with('children')->get();
+        })->orWhere('owner_id', $user->id)->with('children');
+
+        if ($request->get('only_parents', false)) {
+            $categories = $categories->whereNull('parent_id');
+        }
+        $categories = $categories->get();
         return response()->json($categories);
     }
 
@@ -62,7 +67,7 @@ class CategoryController extends Controller
             'status' => $request->get('status', 'active'),
         ]);
 
-        $category['image'] = $category->getImageUrl();
+        // $category['image'] = $category->getImageUrl();
 
         return response()->json($category, 201);
     }
@@ -100,8 +105,6 @@ class CategoryController extends Controller
             'visible_stores' => json_encode($visibleStores),
             'status' => $request->get('status', $category->status),
         ]);
-
-        $category['image'] = $category->getImageUrl();
 
         return response()->json($category);
     }
