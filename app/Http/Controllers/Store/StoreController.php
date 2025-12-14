@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Store;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Store\StoreResource;
 use App\Models\Store;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -12,7 +14,7 @@ class StoreController extends Controller
     public function index()
     {
         $user = auth()->user();
-        $stores = $user->stores;
+        $stores = StoreResource::collection($user->stores);
         return response()->json($stores);
     }
 
@@ -40,7 +42,9 @@ class StoreController extends Controller
             'manager_id' => 'nullable|exists:users,id',
             'staff_list' => 'nullable|array'
         ]);
-        return dd($data['staff_list']);
+
+        $staffList = $data['staff_list'] ?? [];
+        unset($data['staff_list']);
 
         $data['owner_id'] = $user->id;
 
@@ -52,8 +56,27 @@ class StoreController extends Controller
 
         $data['image'] = $imagePath;
 
-        $store = $user->stores()->create($data);
-        return response()->json($store, 201);
+        DB::beginTransaction();
+
+        try {
+            $store = $user->stores()->create($data);
+
+            if (count($staffList) > 0) {
+                foreach ($staffList as $staffRecord) {
+                    $staffId = $staffRecord['staff_id'];
+                    $roleId = $staffRecord['role_id'];
+                    $storeUserData = ['store_id' => $store['id'], 'user_id' => $staffId, 'role_id' => $roleId];
+                    $storeUser = $store->staff()->create($storeUserData);
+                }
+            }
+
+            DB::commit();
+
+            return response()->json($store, 201);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     public function update(Request $request, $id)
