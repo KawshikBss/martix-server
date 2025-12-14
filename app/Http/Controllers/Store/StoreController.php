@@ -29,15 +29,28 @@ class StoreController extends Controller
 
         $data = $request->validate([
             'name' => 'required|string|max:255',
+            'image' => 'nullable|image|max:2048',
+            'unique_id' => 'nullable|string|max:255',
             'branch' => 'nullable|string|max:255',
             'type' => 'nullable|string|max:255',
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:500',
+            'address_2' => 'nullable|string|max:500',
             'manager_id' => 'nullable|exists:users,id',
+            'staff_list' => 'nullable|array'
         ]);
+        return dd($data['staff_list']);
 
         $data['owner_id'] = $user->id;
+
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('profiles', 'public');
+        } else {
+            $imagePath = null;
+        }
+
+        $data['image'] = $imagePath;
 
         $store = $user->stores()->create($data);
         return response()->json($store, 201);
