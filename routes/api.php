@@ -5,6 +5,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\Store\CategoryController;
 use App\Http\Controllers\Store\ProductController;
 use App\Http\Controllers\Store\StoreController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/test', function () {
@@ -14,6 +15,10 @@ Route::get('/test', function () {
 require __DIR__ . '/../routes/auth.php';
 
 Route::middleware(['auth:sanctum'])->group(function () {
+    Route::group(['prefix' => 'users'], function () {
+        Route::get('/', [UserController::class, 'index']);
+    });
+
     Route::group(['prefix' => 'roles'], function () {
         Route::get('/', [RoleController::class, 'index']);
         Route::get('/{id}', [RoleController::class, 'show']);
