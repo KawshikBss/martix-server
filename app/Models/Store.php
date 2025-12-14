@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Store\StoreUser;
 use Illuminate\Database\Eloquent\Model;
 
 class Store extends Model
@@ -16,5 +17,10 @@ class Store extends Model
     public function manager()
     {
         return $this->belongsTo(User::class, 'manager_id');
+    }
+
+    public function staff()
+    {
+        return $this->hasMany(StoreUser::class);
     }
 }
