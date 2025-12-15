@@ -142,6 +142,17 @@ class StoreController extends Controller
         }
     }
 
+    public function toggleStatus($id)
+    {
+        $user = auth()->user();
+        $store = $user->stores()->findOrFail($id);
+        $res = $store->update(['is_active' => !$store->is_active]);
+        if (!$res) {
+            return response()->json(['error' => 'Failed to update status!'], 500);
+        }
+        return response()->json(['message' => 'Status updated successfully!'], 200);
+    }
+
     public function destroy($id)
     {
         $user = auth()->user();
