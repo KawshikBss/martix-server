@@ -11,10 +11,16 @@ use Illuminate\Support\Facades\DB;
 
 class StoreController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
-        $stores = StoreResource::collection($user->stores);
+        $search = $request->query('query', null);
+        $stores = $user->stores;
+        if ($search != null && $search !== '') {
+            $like = "%{$search}%";
+            $stores = $user->stores()->where('name', 'like', $like)->orWhere('unique_id', $like)->get();
+        }
+        $stores = StoreResource::collection($stores);
         return response()->json($stores);
     }
 

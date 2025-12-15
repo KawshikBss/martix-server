@@ -13,6 +13,8 @@ class CategoryController extends Controller
     {
         $user = auth()->user();
 
+        $search = $request->query('query', null);
+
         $storeIds = $user->stores->pluck('id')->toArray();
         $managerStoreIds = Store::where('manager_id', $user->id)->pluck('id')->toArray();
         $storeIds = array_merge($storeIds, $managerStoreIds);
@@ -23,9 +25,16 @@ class CategoryController extends Controller
             }
         })->orWhere('owner_id', $user->id)->with('children');
 
-        if ($request->get('only_parents', false)) {
+        if ($search !== null && $search !== '') {
+            $like = "%{$search}%";
+            $categories = $categories->where(function ($q) use ($like) {
+                $q->where('name', 'like', $like)
+                    ->orWhere('slug', 'like', $like);
+            });
+        } else if ($request->get('only_parents', false)) {
             $categories = $categories->whereNull('parent_id');
         }
+
         $categories = $categories->get();
         return response()->json($categories);
     }
