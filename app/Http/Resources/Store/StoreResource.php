@@ -26,7 +26,9 @@ class StoreResource extends JsonResource
             'address' => $this->address,
             'address_2' => $this->address_2,
             'owner' => $this->owner,
+            'manager_id' => $this->manager_id,
             'manager' => $this->manager,
+            'staff' => $this->staff,
             'is_active' => $this->is_active,
             'created_at' => $this->created_at->diffForHumans(),
             'updated_at' => $this->updated_at->diffForHumans()
