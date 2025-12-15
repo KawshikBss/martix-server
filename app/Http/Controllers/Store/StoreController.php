@@ -21,7 +21,7 @@ class StoreController extends Controller
     public function show($id)
     {
         $user = auth()->user();
-        $store = $user->stores()->findOrFail($id);
+        $store = $user->stores()->findOrFail($id)->toResource(StoreResource::class);
         return response()->json($store);
     }
 
@@ -35,6 +35,7 @@ class StoreController extends Controller
             'unique_id' => 'nullable|string|max:255',
             'branch' => 'nullable|string|max:255',
             'type' => 'nullable|string|max:255',
+            'description' => 'nullable|string|max:255',
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:500',
@@ -66,7 +67,7 @@ class StoreController extends Controller
                     $staffId = $staffRecord['staff_id'];
                     $roleId = $staffRecord['role_id'];
                     $storeUserData = ['store_id' => $store['id'], 'user_id' => $staffId, 'role_id' => $roleId];
-                    $storeUser = $store->staff()->create($storeUserData);
+                    $store->staff()->create($storeUserData);
                 }
             }
 
@@ -85,17 +86,60 @@ class StoreController extends Controller
         $store = $user->stores()->findOrFail($id);
 
         $data = $request->validate([
-            'name' => 'sometimes|required|string|max:255',
+            'name' => 'required|string|max:255',
+            'image' => 'nullable|image|max:2048',
+            'unique_id' => 'nullable|string|max:255',
             'branch' => 'nullable|string|max:255',
             'type' => 'nullable|string|max:255',
+            'description' => 'nullable|string|max:255',
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:500',
+            'address_2' => 'nullable|string|max:500',
             'manager_id' => 'nullable|exists:users,id',
+            'staff_list' => 'nullable|array'
         ]);
 
-        $store->update($data);
-        return response()->json($store);
+        $newStaffList = $data['staff_list'] ?? [];
+        unset($data['staff_list']);
+
+        if ($request->hasFile('image')) {
+            $data['image'] = $request->file('image')->store('profiles', 'public');
+        }
+
+        DB::beginTransaction();
+        try {
+            $store->update($data);
+
+            // Sync staff: add new, update existing roles, remove missing
+            $existing = $store->staff()->get(); // collection of store-staff records
+            $existingIds = $existing->pluck('user_id')->toArray();
+            $newIds = array_map(fn($s) => $s['staff_id'], $newStaffList ?: []);
+
+            // Remove staff no longer present
+            $toRemove = array_diff($existingIds, $newIds);
+            if (!empty($toRemove)) {
+                $store->staff()->whereIn('user_id', $toRemove)->delete();
+            }
+
+            // Add new staff and update roles for existing
+            foreach ($newStaffList as $staffRecord) {
+                $staffId = $staffRecord['staff_id'];
+                $roleId = $staffRecord['role_id'] ?? null;
+
+                if (in_array($staffId, $existingIds)) {
+                    $store->staff()->where('user_id', $staffId)->update(['role_id' => $roleId]);
+                } else {
+                    $store->staff()->create(['user_id' => $staffId, 'role_id' => $roleId]);
+                }
+            }
+
+            DB::commit();
+            return response()->json($store);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     public function destroy($id)
