@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
+use App\Models\Store\Inventory\InventoryMovement;
 use App\Models\Store\Product;
 use App\Models\Store\StoreUser;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -98,5 +99,10 @@ class User extends Authenticatable
     public function categories()
     {
         return $this->hasMany(Category::class, 'owner_id');
+    }
+
+    public function inventoryMovements()
+    {
+        return $this->hasMany(InventoryMovement::class, 'performed_by_id');
     }
 }

@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Store\Inventory\Inventory;
 use App\Models\Store\StoreUser;
 use Illuminate\Database\Eloquent\Model;
 
 class Store extends Model
 {
     protected $guarded = [];
-    
+
     protected $appends = ['image_url'];
 
     public function getImageUrlAttribute(): string
@@ -29,5 +30,10 @@ class Store extends Model
     public function staff()
     {
         return $this->hasMany(StoreUser::class)->with(['role', 'user']);
+    }
+
+    public function inventories()
+    {
+        return $this->hasMany(Inventory::class);
     }
 }

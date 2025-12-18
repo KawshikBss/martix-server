@@ -3,6 +3,7 @@
 namespace App\Models\Store;
 
 use App\Models\Category;
+use App\Models\Store\Inventory\Inventory;
 use App\Models\Store\Product\ProductOption;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
@@ -35,11 +36,11 @@ class Product extends Model
 
     public function variants()
     {
-        return $this->hasMany(Product::class, 'parent_id')->with(['category', 'options']);
+        return $this->hasMany(Product::class, 'parent_id')->with(['category']);
     }
 
-    public function options()
+    public function inventories()
     {
-        return $this->hasMany(ProductOption::class)->with('values');
+        return $this->hasMany(Inventory::class);
     }
 }
