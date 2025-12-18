@@ -36,7 +36,7 @@ class Product extends Model
 
     public function variants()
     {
-        return $this->hasMany(Product::class, 'parent_id')->with(['category', 'inventories']);
+        return $this->hasMany(Product::class, 'parent_id')->with(['category']);
     }
 
     public function inventories()
