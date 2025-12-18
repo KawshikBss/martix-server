@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Store;
 
 use App\Http\Controllers\Controller;
 use App\Models\Store;
+use App\Models\Store\Inventory\Inventory;
+use App\Models\Store\Inventory\InventoryMovement;
 use App\Models\Store\Product;
 use Exception;
 use Illuminate\Http\Request;
@@ -51,11 +53,14 @@ class ProductController extends Controller
             // 'parent_id' => 'nullable|exists:products,id',
             'is_variation' => 'sometimes|boolean',
             'is_active' => 'sometimes|boolean',
-            'variations' => 'nullable|array'
+            'variations' => 'nullable|array',
+            'product_stocks' => 'nullable|array',
         ]);
 
-        $variations = $data['variations'];
+        $variations = $data['variations'] ?? [];
+        $productStocks = $data['product_stocks'] ?? [];
         unset($data['variations']);
+        unset($data['product_stocks']);
 
         if ($request->hasFile('image')) {
             $imagePath = $request->file('image')->store('products', 'public');
@@ -71,19 +76,49 @@ class ProductController extends Controller
 
         try {
             $product = $user->products()->create($data);
+            $newProducts = [];
             if (count($variations) > 0) {
                 unset($data['sku']);
                 $data['is_variation'] = true;
                 foreach ($variations as $variation) {
-                    $newProduct = $product->variants()->create($data);
-                    $productOption = $newProduct->options()->create([
-                        'name' => $variation['option']
+                    $data['variations'] = json_encode([
+                        'option' => $variation['option'],
+                        'value' => $variation['value']
                     ]);
-                    foreach ($variation['values'] as $value) {
-                        $productOption->values()->create([
-                            'value' => $value
-                        ]);
+                    $newProducts[$data['variations']] = $product->variants()->create($data);
+                }
+            }
+
+            if (count($productStocks) > 0) {
+                foreach ($productStocks as $stock) {
+                    $variant = json_encode([
+                        'option' => $stock['variant']['option'],
+                        'value' => $stock['variant']['value']
+                    ]);
+                    $productId = $product['id'];
+                    if (array_key_exists($variant, $newProducts)) {
+                        $productId = $newProducts[$variant]['id'];
                     }
+                    $stockData = [
+                        'store_id' => $stock['store'],
+                        'product_id' => $productId,
+                        'barcode' => $stock['barcode'],
+                        'initial_quantity' => $stock['quantity'],
+                        'quantity' => $stock['quantity'],
+                        'selling_price' => $stock['selling_price'],
+                        'reorder_level' => $stock['reorder_level'],
+                        'expiry_date' => $stock['expiry_date'],
+                    ];
+                    $inventory = Inventory::create($stockData);
+                    $inventoryMovementData = [
+                        'inventory_id' => $inventory['id'],
+                        'type' => 'initial',
+                        'quantity' => $inventory['initial_quantity'],
+                        'reference_type' => 'product_creation',
+                        'reference_id' => $inventory['product_id'],
+                        'preformed_by_id' => $user['id']
+                    ];
+                    InventoryMovement::create($inventoryMovementData);
                 }
             }
 
