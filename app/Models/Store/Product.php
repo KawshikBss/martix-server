@@ -12,7 +12,7 @@ class Product extends Model
 {
     protected $guarded = [];
 
-    protected $appends = ['image_url'];
+    protected $appends = ['image_url', 'current_stock_quantity'];
 
     public function getImageUrlAttribute(): string
     {
@@ -36,11 +36,16 @@ class Product extends Model
 
     public function variants()
     {
-        return $this->hasMany(Product::class, 'parent_id')->with(['category']);
+        return $this->hasMany(Product::class, 'parent_id')->with(['category', 'inventories']);
     }
 
     public function inventories()
     {
         return $this->hasMany(Inventory::class);
+    }
+
+    public function getCurrentStockQuantityAttribute()
+    {
+        return $this->inventories()->sum('quantity');
     }
 }
