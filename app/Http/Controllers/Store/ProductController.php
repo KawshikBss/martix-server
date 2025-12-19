@@ -31,7 +31,7 @@ class ProductController extends Controller
     public function show($id)
     {
         $user = auth()->user();
-        $product = $user->products()->findOrFail($id);
+        $product = $user->products()->with(['variants', 'variants.inventories', 'inventories'])->findOrFail($id);
         return response()->json($product);
     }
 
@@ -91,13 +91,15 @@ class ProductController extends Controller
 
             if (count($productStocks) > 0) {
                 foreach ($productStocks as $stock) {
-                    $variant = json_encode([
-                        'option' => $stock['variant']['option'],
-                        'value' => $stock['variant']['value']
-                    ]);
                     $productId = $product['id'];
-                    if (array_key_exists($variant, $newProducts)) {
-                        $productId = $newProducts[$variant]['id'];
+                    if (array_key_exists('variant', $stock)) {
+                        $variant = json_encode([
+                            'option' => $stock['variant']['option'],
+                            'value' => $stock['variant']['value']
+                        ]);
+                        if (array_key_exists($variant, $newProducts)) {
+                            $productId = $newProducts[$variant]['id'];
+                        }
                     }
                     $stockData = [
                         'store_id' => $stock['store'],
@@ -137,25 +139,34 @@ class ProductController extends Controller
         $product = $user->products()->findOrFail($id);
 
         $data = $request->validate([
-            'name' => 'sometimes|required|string|max:255',
-            'sku' => 'nullable|string|max:100|unique:products,sku,' . $product->id,
+            'name' => 'required|string|max:255',
+            'sku' => 'nullable|string|max:100|unique:products,sku',
             'description' => 'nullable|string',
             'image' => 'nullable|image|max:2048',
-            'cost_price' => 'sometimes|required|numeric|min:0',
+            'cost_price' => 'required|numeric|min:0',
             'tax_type' => 'nullable|string|max:100',
             'tax_rate' => 'nullable|numeric|min:0',
             'category_id' => 'nullable|exists:categories,id',
             'brand' => 'nullable|string|max:255',
             'tags' => 'nullable|string',
-            'parent_id' => 'nullable|exists:products,id',
             'is_variation' => 'sometimes|boolean',
             'is_active' => 'sometimes|boolean',
+            'variations' => 'nullable|array',
+            'product_stocks' => 'nullable|array',
         ]);
+
+        $variations = $data['variations'] ?? [];
+        $productStocks = $data['product_stocks'] ?? [];
+        unset($data['variations']);
+        unset($data['product_stocks']);
 
         if ($request->hasFile('image')) {
             $imagePath = $request->file('image')->store('products', 'public');
-            $data['image'] = $imagePath;
+        } else {
+            $imagePath = $product['image'];
         }
+
+        $data['image'] = $imagePath;
 
         $product->update($data);
         return response()->json($product);
