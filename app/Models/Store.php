@@ -10,7 +10,7 @@ class Store extends Model
 {
     protected $guarded = [];
 
-    protected $appends = ['image_url'];
+    protected $appends = ['image_url', 'current_inventory_value'];
 
     public function getImageUrlAttribute(): string
     {
@@ -35,5 +35,17 @@ class Store extends Model
     public function inventories()
     {
         return $this->hasMany(Inventory::class);
+    }
+
+    public function getCurrentInventoryValue()
+    {
+        return $this->inventories->sum(function ($inventory) {
+            return $inventory->quantity * $inventory->selling_price;
+        });
+    }
+
+    public function getLowStockItemsCount()
+    {
+        return $this->inventories()->whereColumn('quantity', '<=', 'reorder_level')->count();
     }
 }

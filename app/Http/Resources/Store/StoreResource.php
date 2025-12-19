@@ -26,6 +26,8 @@ class StoreResource extends JsonResource
             'address' => $this->address,
             'address_2' => $this->address_2,
             'owner' => $this->owner,
+            'current_inventory_value' => $this->getCurrentInventoryValue(),
+            'low_stock_items_count' => $this->getLowStockItemsCount(),
             'manager_id' => $this->manager_id,
             'manager' => $this->manager,
             'staff' => $this->staff,
