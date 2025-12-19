@@ -12,7 +12,7 @@ class Product extends Model
 {
     protected $guarded = [];
 
-    protected $appends = ['image_url', 'current_stock_quantity'];
+    protected $appends = ['image_url', 'variation_meta', 'current_stock_quantity'];
 
     public function getImageUrlAttribute(): string
     {
@@ -41,11 +41,17 @@ class Product extends Model
 
     public function inventories()
     {
-        return $this->hasMany(Inventory::class);
+        return $this->hasMany(Inventory::class)->with('store');
     }
 
     public function getCurrentStockQuantityAttribute()
     {
         return $this->inventories()->sum('quantity');
+    }
+
+    public function getVariationMetaAttribute()
+    {
+        $variation = $this->variations ? json_decode($this->variations, true) : null;
+        return $variation;
     }
 }
