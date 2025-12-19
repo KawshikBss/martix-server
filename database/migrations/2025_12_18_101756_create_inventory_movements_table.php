@@ -20,8 +20,8 @@ return new class extends Migration
             $table->text('note')->nullable();
             $table->string('reference_type')->nullable();
             $table->unsignedBigInteger('reference_id')->nullable();
-            $table->unsignedBigInteger('preformed_by_id')->nullable();
-            $table->foreign('preformed_by_id')->references('id')->on('users')->onDelete('cascade');
+            $table->unsignedBigInteger('performed_by_id')->nullable();
+            $table->foreign('performed_by_id')->references('id')->on('users')->onDelete('cascade');
             $table->timestamps();
         });
     }
