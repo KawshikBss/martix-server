@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Inventory\InventoryController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\Store\CategoryController;
@@ -63,5 +64,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/', [ProductController::class, 'store']);
         Route::post('/update/{id}', [ProductController::class, 'update']);
         Route::delete('/{id}', [ProductController::class, 'destroy']);
+    });
+
+    Route::group(['prefix' => 'inventories'], function () {
+        Route::get('/', [InventoryController::class, 'index']);
+        Route::get('/movements', [InventoryController::class, 'movements']);
     });
 });
