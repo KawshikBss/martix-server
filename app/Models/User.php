@@ -51,7 +51,14 @@ class User extends Authenticatable
         ];
     }
 
+    protected $appends = ['image_url'];
+
     public function getUserImageUrl()
+    {
+        return  env('APP_URL') . '/storage/' . ($this->image ? $this->image : 'profiles/default-user.png');
+    }
+
+    public function getImageUrlAttribute()
     {
         return  env('APP_URL') . '/storage/' . ($this->image ? $this->image : 'profiles/default-user.png');
     }
