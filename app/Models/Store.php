@@ -37,14 +37,19 @@ class Store extends Model
         return $this->hasMany(Inventory::class);
     }
 
-    public function getCurrentInventoryValue()
+    public function getCurrentInventoryCountAttribute()
+    {
+        return $this->inventories()->sum('quantity');
+    }
+
+    public function getCurrentInventoryValueAttribute()
     {
         return $this->inventories->sum(function ($inventory) {
             return $inventory->quantity * $inventory->selling_price;
         });
     }
 
-    public function getLowStockItemsCount()
+    public function getLowStockItemsCountAttribute()
     {
         return $this->inventories()->whereColumn('quantity', '<=', 'reorder_level')->count();
     }
