@@ -16,6 +16,7 @@ class StoreResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'image_url' => $this->image_url,
             'name' => $this->name,
             'unique_id' => $this->unique_id,
             'branch' => $this->branch,
@@ -26,8 +27,10 @@ class StoreResource extends JsonResource
             'address' => $this->address,
             'address_2' => $this->address_2,
             'owner' => $this->owner,
-            'current_inventory_value' => $this->getCurrentInventoryValue(),
-            'low_stock_items_count' => $this->getLowStockItemsCount(),
+            'current_inventory_count' => $this->getCurrentInventoryCountAttribute(),
+            'current_inventory_value' => $this->getCurrentInventoryValueAttribute(),
+            'low_stock_items_count' => $this->getLowStockItemsCountAttribute(),
+            'inventories' => $this->inventories()->with(['product'])->get(),
             'manager_id' => $this->manager_id,
             'manager' => $this->manager,
             'staff' => $this->staff,
