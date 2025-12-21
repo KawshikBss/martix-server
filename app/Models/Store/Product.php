@@ -12,7 +12,12 @@ class Product extends Model
 {
     protected $guarded = [];
 
-    protected $appends = ['image_url', 'variation_meta', 'current_stock_quantity'];
+    protected $appends = ['image_url', 'variation_meta', 'current_stock_quantity', 'min_selling_price', 'max_selling_price'];
+
+    protected $casts = [
+        'created_at' => 'datetime:d-m-Y',
+        'updated_at' => 'datetime:d-m-Y',
+    ];
 
     public function getImageUrlAttribute(): string
     {
@@ -53,5 +58,15 @@ class Product extends Model
     {
         $variation = $this->variations ? json_decode($this->variations, true) : null;
         return $variation;
+    }
+
+    public function getMinSellingPriceAttribute()
+    {
+        return $this->inventories()->min('selling_price');
+    }
+
+    public function getMaxSellingPriceAttribute()
+    {
+        return $this->inventories()->max('selling_price');
     }
 }
