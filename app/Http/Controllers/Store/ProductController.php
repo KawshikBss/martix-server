@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
         $storeIds = $user->stores->pluck('id')->toArray();
@@ -24,14 +24,54 @@ class ProductController extends Controller
             foreach ($productsInStores as $productId) {
                 $q->where('id', $productId);
             }
-        })->orWhere('owner_id', $user->id)->where('is_variation', false)->with(['category', 'variants'])->get();
+        })->orWhere('owner_id', $user->id)->where('is_variation', false);
+
+        $search = $request->query('query', null);
+        if ($search != null && $search !== '') {
+            $like = "%{$search}%";
+            $products = $products->where('name', 'like', $like)->orWhere('sku', $like);
+        }
+
+        $category = $request->query('category', null);
+        if ($category != null && $category !== '') {
+            $products = $products->where('category_id', $category);
+        }
+
+        $stockStatus = $request->query('stock_status', null);
+        if ($stockStatus != null && $stockStatus !== '') {
+            if ($stockStatus === 'in_stock') {
+                $products = $products->whereDoesntHave('inventories', function ($q) {
+                    $q->whereColumn('quantity', '>', 'reorder_level');
+                });
+            } else if ($stockStatus === 'low_stock') {
+                $products = $products->whereHas('inventories', function ($q) {
+                    $q->whereColumn('quantity', '<=', 'reorder_level');
+                });
+            } else if ($stockStatus === 'out_of_stock') {
+                $products = $products->whereHas('inventories', function ($q) {
+                    $q->where('quantity', '<=', 0);
+                });
+            }
+        }
+
+        $minPrice = $request->query('min_price', null);
+        if ($minPrice != null && $minPrice !== '') {
+            $products = $products->where('cost_price', '>=', $minPrice);
+        }
+
+        $maxPrice = $request->query('max_price', null);
+        if ($maxPrice != null && $maxPrice !== '') {
+            $products = $products->where('cost_price', '<=', $maxPrice);
+        }
+
+        $products = $products->with(['category', 'variants'])->get();
         return response()->json($products);
     }
 
     public function show($id)
     {
         $user = auth()->user();
-        $product = $user->products()->with(['variants', 'variants.inventories', 'inventories'])->findOrFail($id);
+        $product = $user->products()->with(['owner', 'variants', 'variants.inventories', 'inventories'])->findOrFail($id);
         return response()->json($product);
     }
 
@@ -118,7 +158,7 @@ class ProductController extends Controller
                         'quantity' => $inventory['initial_quantity'],
                         'reference_type' => 'product_creation',
                         'reference_id' => $inventory['product_id'],
-                        'preformed_by_id' => $user['id']
+                        'performed_by_id' => $user['id']
                     ];
                     InventoryMovement::create($inventoryMovementData);
                 }
