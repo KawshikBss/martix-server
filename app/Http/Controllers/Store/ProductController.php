@@ -9,6 +9,7 @@ use App\Models\Store\Inventory\InventoryMovement;
 use App\Models\Store\Product;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
@@ -37,32 +38,113 @@ class ProductController extends Controller
             $products = $products->where('category_id', $category);
         }
 
-        $stockStatus = $request->query('stock_status', null);
-        if ($stockStatus != null && $stockStatus !== '') {
-            if ($stockStatus === 'in_stock') {
+        $minPrice = $request->query('min_price', null);
+        if ($minPrice != null && $minPrice !== '') {
+            $products = $products->whereHas('inventories', function ($q) use ($minPrice) {
+                $q->select('product_id')
+                    ->groupBy('product_id')
+                    ->havingRaw('MIN(selling_price) >= ?', [$minPrice]);
+            }, '>=', 1);
+        }
+
+        $maxPrice = $request->query('max_price', null);
+        if ($maxPrice != null && $maxPrice !== '') {
+            $products = $products->whereHas('inventories', function ($q) use ($maxPrice) {
+                $q->select('product_id')
+                    ->groupBy('product_id')
+                    ->havingRaw('MAX(selling_price) <= ?', [$maxPrice]);
+            }, '>=', 1);
+        }
+
+        $stockLevel = $request->query('stock_level', null);
+        if ($stockLevel != null && $stockLevel !== '') {
+            if ($stockLevel === 'in_stock') {
                 $products = $products->whereDoesntHave('inventories', function ($q) {
                     $q->whereColumn('quantity', '>', 'reorder_level');
                 });
-            } else if ($stockStatus === 'low_stock') {
+            } else if ($stockLevel === 'low_stock') {
                 $products = $products->whereHas('inventories', function ($q) {
                     $q->whereColumn('quantity', '<=', 'reorder_level');
                 });
-            } else if ($stockStatus === 'out_of_stock') {
+            } else if ($stockLevel === 'out_of_stock') {
                 $products = $products->whereHas('inventories', function ($q) {
                     $q->where('quantity', '<=', 0);
                 });
             }
         }
 
-        $minPrice = $request->query('min_price', null);
-        if ($minPrice != null && $minPrice !== '') {
-            $products = $products->where('cost_price', '>=', $minPrice);
+        $status = $request->query('status', null);
+        if ($status != null && $status !== '') {
+            if ($status === 'active')
+                $products = $products->where('is_active', true);
+            else
+                $products = $products->where('is_active', false);
         }
 
-        $maxPrice = $request->query('max_price', null);
-        if ($maxPrice != null && $maxPrice !== '') {
-            $products = $products->where('cost_price', '<=', $maxPrice);
+        $brand = $request->query('brand', null);
+        if ($brand != null && $brand !== '') {
+            $like = "%{$brand}%";
+            $products = $products->where('brand', 'like', $like);
         }
+
+        $tag = $request->query('tag', null);
+        if ($tag != null && $tag !== '') {
+            $like = "%{$tag}%";
+            $products = $products->where('tags', 'like', $like);
+        }
+
+        $hasExpiryDate = $request->query('has_expiry_date', null);
+        if ($hasExpiryDate != null && $hasExpiryDate === 'true') {
+            $products = $products->whereHas('inventories', function ($q) {
+                $q->whereNotNull('expiry_date');
+            });
+        }
+
+        $expiringSoon = $request->query('expiring_soon', null);
+        if ($expiringSoon != null && $expiringSoon === 'true') {
+            $products = $products->whereHas('inventories', function ($q) {
+                $startDate = Carbon::now();
+                $endDate = $startDate->copy()->addMonth();
+                $q->whereBetween('expiry_date', [$startDate, $endDate]);
+            });
+        }
+
+        $hasBarcode = $request->query('has_barcode', null);
+        if ($hasBarcode != null && $hasBarcode === 'true') {
+            $products = $products->whereHas('inventories', function ($q) {
+                $q->whereNotNull('barcode');
+            });
+        }
+
+        $hasVariants = $request->query('has_variants', null);
+        if ($hasVariants != null && $hasVariants === 'true') {
+            $products = $products->whereHas('variants');
+        }
+
+        $minCreateDate = $request->query('min_create_date', null);
+        if ($minCreateDate != null && $minCreateDate !== '') {
+            $date = Carbon::parse($minCreateDate);
+            $products = $products->where('created_at', '>=', $date);
+        }
+
+        $maxCreateDate = $request->query('max_create_date', null);
+        if ($maxCreateDate != null && $maxCreateDate !== '') {
+            $date = Carbon::parse($maxCreateDate);
+            $products = $products->where('created_at', '<=', $date);
+        }
+
+        $minUpdateDate = $request->query('min_update_date', null);
+        if ($minUpdateDate != null && $minUpdateDate !== '') {
+            $date = Carbon::parse($minUpdateDate);
+            $products = $products->where('updated_at', '>=', $date);
+        }
+
+        $maxUpdateDate = $request->query('max_update_date', null);
+        if ($maxUpdateDate != null && $maxUpdateDate !== '') {
+            $date = Carbon::parse($maxUpdateDate);
+            $products = $products->where('updated_at', '<=', $date);
+        }
+
 
         $products = $products->with(['category', 'variants'])->get();
         return response()->json($products);
