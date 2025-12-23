@@ -21,7 +21,7 @@ class Product extends Model
 
     public function getImageUrlAttribute(): string
     {
-        return  env('APP_URL') . '/storage/' . ($this->image ? $this->image : 'products/default-user.png');
+        return  env('APP_URL') . '/storage/' . ($this->image ? $this->image : 'products/default-product.jpg');
     }
 
     public function owner()
