@@ -12,7 +12,7 @@ class Product extends Model
 {
     protected $guarded = [];
 
-    protected $appends = ['image_url', 'variation_meta', 'current_stock_quantity', 'min_selling_price', 'max_selling_price'];
+    protected $appends = ['image_url', 'variation_meta', 'current_stock_quantity', 'min_selling_price', 'max_selling_price', 'stock_status'];
 
     protected $casts = [
         'created_at' => 'datetime:d-m-Y',
@@ -68,5 +68,18 @@ class Product extends Model
     public function getMaxSellingPriceAttribute()
     {
         return $this->inventories()->max('selling_price');
+    }
+
+    public function getStockStatusAttribute()
+    {
+        if ($this->inventories()->where('quantity', '<=', 0)->exists()) {
+            return 'Out Of Stock';
+        }
+
+        if ($this->inventories()->whereColumn('quantity', '<=', 'reorder_level')->exists()) {
+            return 'Low Stock';
+        }
+
+        return 'In Stock';
     }
 }
