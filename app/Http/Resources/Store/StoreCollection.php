@@ -14,6 +14,12 @@ class StoreCollection extends ResourceCollection
      */
     public function toArray(Request $request): array
     {
-        return parent::toArray($request);
+        return [
+            'data' => $this->collection,
+            'current_page' => $this->currentPage(),
+            'last_page' => $this->lastPage(),
+            'per_page' => $this->perPage(),
+            'total' => $this->total(),
+        ];
     }
 }
