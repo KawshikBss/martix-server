@@ -153,7 +153,7 @@ class ProductController extends Controller
     public function show($id)
     {
         $user = auth()->user();
-        $product = $user->products()->with(['owner', 'variants', 'variants.inventories', 'inventories'])->findOrFail($id);
+        $product = $user->products()->with(['owner', 'variants', 'variants.inventories', 'inventories', 'variants.parent'])->findOrFail($id);
         return response()->json($product);
     }
 
