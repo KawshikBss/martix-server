@@ -146,7 +146,7 @@ class ProductController extends Controller
         }
 
 
-        $products = $products->with(['category', 'variants'])->get();
+        $products = $products->with(['category', 'variants'])->paginate(10);
         return response()->json($products);
     }
 
