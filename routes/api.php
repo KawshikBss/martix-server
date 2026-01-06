@@ -74,5 +74,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::group(['prefix' => 'pos'], function () {
         Route::get('/products', [PosController::class, 'getProducts']);
+        Route::get('/customers', [PosController::class, 'getCustomers']);
     });
 });

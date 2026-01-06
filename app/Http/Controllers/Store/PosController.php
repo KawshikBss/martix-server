@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Store;
 use App\Http\Controllers\Controller;
 use App\Models\Store\Inventory\Inventory;
 use App\Models\Store\Product;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class PosController extends Controller
@@ -79,5 +80,12 @@ class PosController extends Controller
                 'prev' => $products->previousPageUrl(),
             ]
         ]);
+    }
+
+    public function getCustomers()
+    {
+        $authUser = auth()->user();
+        $users = User::whereNot('id', $authUser->id)->where('status', 'active')->get();
+        return response()->json($users);
     }
 }
