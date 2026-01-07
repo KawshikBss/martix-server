@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Store\Customer;
 use App\Models\Store\Inventory\Inventory;
 use App\Models\Store\StoreUser;
 use Illuminate\Database\Eloquent\Model;
@@ -52,5 +53,10 @@ class Store extends Model
     public function getLowStockItemsCountAttribute()
     {
         return $this->inventories()->whereColumn('quantity', '<=', 'reorder_level')->count();
+    }
+
+    public function customers()
+    {
+        return $this->hasMany(Customer::class);
     }
 }

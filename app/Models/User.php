@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
+use App\Models\Store\Customer;
 use App\Models\Store\Inventory\InventoryMovement;
 use App\Models\Store\Product;
 use App\Models\Store\StoreUser;
@@ -111,5 +112,10 @@ class User extends Authenticatable
     public function inventoryMovements()
     {
         return $this->hasMany(InventoryMovement::class, 'performed_by_id');
+    }
+
+    public function createdCustomers()
+    {
+        return $this->hasMany(Customer::class, 'created_by');
     }
 }
