@@ -4,6 +4,7 @@ use App\Http\Controllers\Inventory\InventoryController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\Store\CategoryController;
+use App\Http\Controllers\Store\CustomerController;
 use App\Http\Controllers\Store\PosController;
 use App\Http\Controllers\Store\ProductController;
 use App\Http\Controllers\Store\StoreController;
@@ -72,8 +73,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/movements', [InventoryController::class, 'movements']);
     });
 
+    Route::group(['prefix' => 'customers'], function () {
+        Route::get('/', [CustomerController::class, 'index']);
+        Route::post('/', [CustomerController::class, 'store']);
+    });
+
     Route::group(['prefix' => 'pos'], function () {
         Route::get('/products', [PosController::class, 'getProducts']);
-        Route::get('/customers', [PosController::class, 'getCustomers']);
     });
 });
