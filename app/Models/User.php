@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Models\Store\Customer;
 use App\Models\Store\Inventory\InventoryMovement;
 use App\Models\Store\Product;
+use App\Models\Store\Sale\Sale;
 use App\Models\Store\StoreUser;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -117,5 +118,10 @@ class User extends Authenticatable
     public function createdCustomers()
     {
         return $this->hasMany(Customer::class, 'created_by');
+    }
+
+    public function sales()
+    {
+        return $this->hasMany(Sale::class);
     }
 }

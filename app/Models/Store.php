@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Store\Customer;
 use App\Models\Store\Inventory\Inventory;
+use App\Models\Store\Sale\Sale;
 use App\Models\Store\StoreUser;
 use Illuminate\Database\Eloquent\Model;
 
@@ -58,5 +59,10 @@ class Store extends Model
     public function customers()
     {
         return $this->hasMany(Customer::class);
+    }
+
+    public function sales()
+    {
+        return $this->hasMany(Sale::class);
     }
 }

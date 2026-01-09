@@ -5,6 +5,7 @@ namespace App\Models\Store;
 use App\Models\Category;
 use App\Models\Store\Inventory\Inventory;
 use App\Models\Store\Product\ProductOption;
+use App\Models\Store\Sale\SaleItem;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 
@@ -81,5 +82,10 @@ class Product extends Model
         }
 
         return 'In Stock';
+    }
+
+    public function saleItem()
+    {
+        return $this->belongsTo(SaleItem::class);
     }
 }

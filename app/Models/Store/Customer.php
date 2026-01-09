@@ -3,6 +3,7 @@
 namespace App\Models\Store;
 
 use App\Models\Store;
+use App\Models\Store\Sale\Sale;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 
@@ -18,5 +19,10 @@ class Customer extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function sales()
+    {
+        return $this->hasMany(Sale::class);
     }
 }

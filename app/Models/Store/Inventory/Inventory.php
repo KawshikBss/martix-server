@@ -4,6 +4,7 @@ namespace App\Models\Store\Inventory;
 
 use App\Models\Store;
 use App\Models\Store\Product;
+use App\Models\Store\Sale\SaleItem;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 
@@ -40,5 +41,10 @@ class Inventory extends Model
                     $p->where('owner_id', $user->id)
                 );
         });
+    }
+
+    public function saleItem()
+    {
+        return $this->belongsTo(SaleItem::class);
     }
 }
