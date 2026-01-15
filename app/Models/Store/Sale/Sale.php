@@ -11,6 +11,11 @@ class Sale extends Model
 {
     protected $guarded = [];
 
+    protected $casts = [
+        'created_at' => 'datetime:d-m-Y',
+        'updated_at' => 'datetime:d-m-Y',
+    ];
+
     public function store()
     {
         return $this->belongsTo(Store::class);
@@ -28,6 +33,6 @@ class Sale extends Model
 
     public function items()
     {
-        return $this->hasMany(SaleItem::class);
+        return $this->hasMany(SaleItem::class)->with(['product']);
     }
 }

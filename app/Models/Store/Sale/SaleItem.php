@@ -17,11 +17,11 @@ class SaleItem extends Model
 
     public function product()
     {
-        return $this->hasOne(Product::class);
+        return $this->belongsTo(Product::class);
     }
 
     public function inventory()
     {
-        return $this->hasOne(Inventory::class);
+        return $this->belongsTo(Inventory::class);
     }
 }
