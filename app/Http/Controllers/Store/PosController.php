@@ -9,6 +9,7 @@ use App\Models\Store\Sale\Sale;
 use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class PosController extends Controller
@@ -83,6 +84,77 @@ class PosController extends Controller
                 'prev' => $products->previousPageUrl(),
             ]
         ]);
+    }
+
+    public function getSales(Request $request)
+    {
+        $user = auth()->user();
+
+        $sales = Sale::where('user_id', $user->id);
+
+        $search = $request->query('query', null);
+        if ($search != null && $search !== '') {
+            $like = "%{$search}%";
+            $sales = $sales->where('sale_number', 'like', $like);
+        }
+
+        $store = $request->query('store', null);
+        if ($store != null && $store !== '') {
+            $sales = $sales->where('store_id', $store);
+        }
+
+        $user = $request->query('user', null);
+        if ($user != null && $user !== '') {
+            $sales = $sales->where('user_id', $user);
+        }
+
+        $status = $request->query('status', null);
+        if ($status != null && $status !== '') {
+            $sales = $sales->where('status', $status);
+        }
+
+        $payment_status = $request->query('payment_status', null);
+        if ($payment_status != null && $payment_status !== '') {
+            $sales = $sales->where('payment_status', $payment_status);
+        }
+
+        $min_order_value = $request->query('min_order_value', null);
+        if ($min_order_value != null && $min_order_value !== '') {
+            $sales = $sales->where('grand_total', '>=', $min_order_value);
+        }
+
+        $max_order_value = $request->query('max_order_value', null);
+        if ($max_order_value != null && $max_order_value !== '') {
+            $sales = $sales->where('grand_total', '<=', $max_order_value);
+        }
+
+        $minCreateDate = $request->query('min_create_date', null);
+        if ($minCreateDate != null && $minCreateDate !== '') {
+            $date = Carbon::parse($minCreateDate);
+            $sales = $sales->where('created_at', '>=', $date);
+        }
+
+        $maxCreateDate = $request->query('max_create_date', null);
+        if ($maxCreateDate != null && $maxCreateDate !== '') {
+            $date = Carbon::parse($maxCreateDate);
+            $sales = $sales->where('created_at', '<=', $date);
+        }
+
+        $minUpdateDate = $request->query('min_update_date', null);
+        if ($minUpdateDate != null && $minUpdateDate !== '') {
+            $date = Carbon::parse($minUpdateDate);
+            $sales = $sales->where('updated_at', '>=', $date);
+        }
+
+        $maxUpdateDate = $request->query('max_update_date', null);
+        if ($maxUpdateDate != null && $maxUpdateDate !== '') {
+            $date = Carbon::parse($maxUpdateDate);
+            $sales = $sales->where('updated_at', '<=', $date);
+        }
+
+        $sales = $sales->with(['user', 'store', 'customer', 'items'])->paginate(10);
+
+        return response()->json($sales);
     }
 
     public function createSale(Request $request)
