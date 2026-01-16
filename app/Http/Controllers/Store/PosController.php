@@ -157,6 +157,13 @@ class PosController extends Controller
         return response()->json($sales);
     }
 
+    public function getSale(Request $request, Sale $sale)
+    {
+        $sale->load(['user', 'store', 'customer', 'items.product', 'items.inventory']);
+
+        return response()->json($sale);
+    }
+
     public function createSale(Request $request)
     {
 
