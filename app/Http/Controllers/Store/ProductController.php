@@ -11,6 +11,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class ProductController extends Controller
 {
@@ -161,7 +162,7 @@ class ProductController extends Controller
     {
         $user = auth()->user();
 
-        $data = $request->validate([
+        $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'sku' => 'nullable|string|max:100|unique:products,sku',
             'description' => 'nullable|string',
@@ -172,12 +173,17 @@ class ProductController extends Controller
             'category_id' => 'nullable|exists:categories,id',
             'brand' => 'nullable|string|max:255',
             'tags' => 'nullable|string',
-            // 'parent_id' => 'nullable|exists:products,id',
             'is_variation' => 'sometimes|boolean',
             'is_active' => 'sometimes|boolean',
             'variations' => 'nullable|array',
             'product_stocks' => 'nullable|array',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $data = $validator->validated();
 
         $variations = $data['variations'] ?? [];
         $productStocks = $data['product_stocks'] ?? [];
@@ -260,9 +266,9 @@ class ProductController extends Controller
         $user = auth()->user();
         $product = $user->products()->findOrFail($id);
 
-        $data = $request->validate([
+        $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'sku' => 'nullable|string|max:100|unique:products,sku',
+            'sku' => 'nullable|string|max:100|unique:products,sku,' . $product->id,
             'description' => 'nullable|string',
             'image' => 'nullable|image|max:2048',
             'cost_price' => 'required|numeric|min:0',
@@ -276,6 +282,12 @@ class ProductController extends Controller
             'variations' => 'nullable|array',
             'product_stocks' => 'nullable|array',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $data = $validator->validated();
 
         $variations = $data['variations'] ?? [];
         $productStocks = $data['product_stocks'] ?? [];
