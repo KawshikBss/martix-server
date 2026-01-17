@@ -159,7 +159,7 @@ class PosController extends Controller
 
     public function getSale(Request $request, Sale $sale)
     {
-        $sale->load(['user', 'store', 'customer', 'items.product', 'items.inventory']);
+        $sale->load(['user', 'store', 'customer', 'items.product', 'items.product.category', 'items.inventory']);
 
         return response()->json($sale);
     }
@@ -228,5 +228,22 @@ class PosController extends Controller
             DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
         }
+    }
+
+    public function refundSale(Request $request, Sale $sale)
+    {
+        $sale->update([
+            'status' => 'refunded'
+        ]);
+
+        return response()->json($sale);
+    }
+    public function cancelSale(Request $request, Sale $sale)
+    {
+        $sale->update([
+            'status' => 'canceled'
+        ]);
+
+        return response()->json($sale);
     }
 }
