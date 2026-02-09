@@ -12,6 +12,7 @@ class Sale extends Model
     protected $guarded = [];
 
     protected $casts = [
+        'payment_details' => 'array',
         'created_at' => 'datetime:d-m-Y',
         'updated_at' => 'datetime:d-m-Y',
     ];
