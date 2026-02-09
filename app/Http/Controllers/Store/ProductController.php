@@ -280,7 +280,7 @@ class ProductController extends Controller
             'is_variation' => 'sometimes|boolean',
             'is_active' => 'sometimes|boolean',
             'variations' => 'nullable|array',
-            'product_stocks' => 'nullable|array',
+            // 'product_stocks' => 'nullable|array',
         ]);
 
         if ($validator->fails()) {
@@ -290,9 +290,39 @@ class ProductController extends Controller
         $data = $validator->validated();
 
         $variations = $data['variations'] ?? [];
-        $productStocks = $data['product_stocks'] ?? [];
+
+        $existingVariations = Product::where('parent_id', $product->id)->where('is_variation', true)->get();
+
+        foreach ($existingVariations as $var) {
+            $varMeta = json_decode($var['variations'], true);
+
+            foreach ($variations as $item) {
+                if ($varMeta['option'] == $item['option'] && $varMeta['value'] == $item['value']) {
+                    if ($item['active'] == "true") {
+                        $var->update(['is_active' => 1]);
+                    } else {
+                        $var->update(['is_active' => 0]);
+                    }
+                    unset($variations[array_search($item, $variations, true)]);
+                }
+            }
+        }
+
+        if (count($variations) > 0) {
+            foreach ($variations as $item) {
+                $newData = $data;
+                unset($newData['sku']);
+                $newData['is_variation'] = true;
+                $newData['variations'] = json_encode([
+                    'option' => $item['option'],
+                    'value' => $item['value']
+                ]);
+                $product->variants()->create($newData);
+            }
+        }
+
+
         unset($data['variations']);
-        unset($data['product_stocks']);
 
         if ($request->hasFile('image')) {
             $imagePath = $request->file('image')->store('products', 'public');
