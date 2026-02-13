@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Store;
 
 use App\Http\Controllers\Controller;
 use App\Models\Store\Inventory\Inventory;
+use App\Models\Store\Inventory\InventoryMovement;
 use App\Models\Store\Product;
 use App\Models\Store\Sale\Sale;
 use App\Models\User;
@@ -210,6 +211,15 @@ class PosController extends Controller
 
             $sale = Sale::create($data);
 
+            $inventoryMovementData = [
+                // 'inventory_id' => $inventory['id'],
+                'type' => 'sale',
+                // 'quantity' => $inventory['initial_quantity'],
+                'reference_type' => 'sale',
+                'reference_id' => $sale->id,
+                'performed_by_id' => $user->id
+            ];
+
             foreach ($saleItems as $item) {
                 $sale->items()->create([
                     'product_id' => $item['product_id'],
@@ -221,6 +231,11 @@ class PosController extends Controller
                     'tax' => $item['tax'],
                     'total' => $item['itemTotal'],
                 ]);
+                $inventoryMovementData['inventory_id'] = $item['inventory_id'];
+                $inventoryMovementData['quantity'] = -$item['quantity'];
+                InventoryMovement::create($inventoryMovementData);
+                $inventory = Inventory::find($item['inventory_id']);
+                $inventory->decrement('quantity', $item['quantity']);
             }
             DB::commit();
             return response()->json($sale, 201);
