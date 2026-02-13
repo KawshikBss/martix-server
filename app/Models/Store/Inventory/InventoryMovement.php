@@ -40,6 +40,8 @@ class InventoryMovement extends Model
         switch ($this->reference_type) {
             case 'product_creation':
                 return 'Product Creation';
+            case 'sale':
+                return 'Sale';
             default:
                 return null;
         }
