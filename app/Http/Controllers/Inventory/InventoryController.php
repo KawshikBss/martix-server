@@ -119,7 +119,51 @@ class InventoryController extends Controller
                 'inventory.product',
                 'performedBy',
             ])
-            ->get();
+            ->paginate(10);
         return response()->json($movements);
+    }
+
+    public function adjustment(Request $request)
+    {
+        $data = $request->validate([
+            'product' => 'required|exists:products,id',
+            'store' => 'required|exists:stores,id',
+            'adjustment_type' => 'required|in:increase,decrease,exact',
+            'quantity' => 'required|integer',
+            'notes' => 'nullable|string',
+        ]);
+
+        $user = auth()->user();
+
+        $inventory = Inventory::where('product_id', $data['product'])->where('store_id', $data['store'])->first();
+
+        if (!$inventory) {
+            return response()->json(['message' => 'Inventory not found'], 404);
+        }
+
+        switch ($data['adjustment_type']) {
+            case 'increase':
+                $inventory->quantity += $data['quantity'];
+                break;
+            case 'decrease':
+                $inventory->quantity -= $data['quantity'];
+                break;
+            case 'exact':
+                $inventory->quantity = $data['quantity'];
+                break;
+        }
+
+        $inventory->save();
+        InventoryMovement::create([
+            'inventory_id' => $inventory['id'],
+            'type' => 'adjustment',
+            'quantity' => $data['quantity'] * ($data['adjustment_type'] === 'decrease' ? -1 : 1),
+            'reference_type' => 'inventory',
+            'reference_id' => $inventory['id'],
+            'performed_by_id' => $user->id,
+            'note' => $data['notes'] ?? null,
+        ]);
+
+        return response()->json(['message' => 'Inventory adjusted successfully']);
     }
 }
