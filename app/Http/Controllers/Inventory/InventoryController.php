@@ -110,15 +110,45 @@ class InventoryController extends Controller
         return response()->json($inventories);
     }
 
-    public function movements()
+    public function movements(Request $request)
     {
         $user = auth()->user();
-        $movements = InventoryMovement::accessibleByUser($user)
-            ->with([
-                'inventory.store',
-                'inventory.product',
-                'performedBy',
-            ])
+        $movements = InventoryMovement::accessibleByUser($user);
+
+        $search = $request->query('query', null);
+        if ($search != null && $search !== '') {
+            $like = "%{$search}%";
+            $movements = $movements->whereHas('inventory.product', function ($sub) use ($like) {
+                $sub->where('name', 'like', $like);
+            })
+                ->orWhereHas('inventory.product', function ($sub) use ($like) {
+                    $sub->where('sku', 'like', $like);
+                });
+        }
+
+        $store = $request->query('store', null);
+        if ($store != null && $store !== '') {
+            $movements = $movements->whereHas('inventory', function ($sub) use ($store) {
+                $sub->where('store_id', $store);
+            });
+        }
+
+        $adjustment_type = $request->query('adjustment_type', null);
+        if ($adjustment_type != null && $adjustment_type !== '') {
+            $movements = $movements->where('quantity', $adjustment_type === 'decrease' ? '<' : '>', 0);
+        }
+
+        $reason = $request->query('reason', null);
+        if ($reason != null && $reason !== '') {
+            $movements = $movements->where('type', $reason);
+        }
+
+
+        $movements = $movements->with([
+            'inventory.store',
+            'inventory.product',
+            'performedBy',
+        ])
             ->paginate(10);
         return response()->json($movements);
     }
