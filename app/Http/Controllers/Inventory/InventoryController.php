@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Inventory;
 use App\Http\Controllers\Controller;
 use App\Models\Store\Inventory\Inventory;
 use App\Models\Store\Inventory\InventoryMovement;
+use App\Models\Store\Inventory\InventoryTransfer;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class InventoryController extends Controller
 {
@@ -144,47 +146,70 @@ class InventoryController extends Controller
             ->first();
 
         if (!$inventory) {
-            return response()->json(['message' => 'Inventory not found'], 404);
+            return response()->json(['error' => 'Inventory not found'], 404);
         }
         if ($inventory->quantity < $data['quantity']) {
-            return response()->json(['message' => 'Insufficient inventory quantity'], 400);
+            return response()->json(['error' => 'Insufficient inventory quantity'], 400);
         }
 
-        $inventory->decrement('quantity', $data['quantity']);
-        $inventory->save();
+        DB::beginTransaction();
+        try {
 
-        InventoryMovement::create([
-            'inventory_id' => $inventory->id,
-            'type' => 'transfer',
-            'quantity' => -$data['quantity'],
-            'reference_type' => 'transfer',
-            'reference_id' => null,
-            'performed_by_id' => $user->id,
-        ]);
+            $inventory->decrement('quantity', $data['quantity']);
+            $inventory->save();
 
-        $receivingInventory = Inventory::firstOrCreate(
-            [
-                'product_id' => $inventory->product_id,
-                'store_id' => $data['receiving_store'],
-            ],
-            [
-                'quantity' => 0,
-            ]
-        );
+            InventoryMovement::create([
+                'inventory_id' => $inventory->id,
+                'type' => 'transfer',
+                'quantity' => -$data['quantity'],
+                'reference_type' => 'transfer',
+                'reference_id' => null,
+                'performed_by_id' => $user->id,
+            ]);
 
-        $receivingInventory->increment('quantity', $data['quantity']);
-        $receivingInventory->save();
-        InventoryMovement::create([
-            'inventory_id' => $receivingInventory->id,
-            'type' => 'transfer',
-            'quantity' => $data['quantity'],
-            'reference_type' => 'transfer',
-            'reference_id' => null,
-            'performed_by_id' => $user->id,
-        ]);
+            $receivingInventory = Inventory::firstOrCreate(
+                [
+                    'product_id' => $inventory->product_id,
+                    'store_id' => $data['receiving_store'],
+                ],
+                [
+                    'quantity' => 0,
+                ]
+            );
 
+            $receivingInventory->increment('quantity', $data['quantity']);
+            $receivingInventory->save();
+            InventoryMovement::create([
+                'inventory_id' => $receivingInventory->id,
+                'type' => 'transfer',
+                'quantity' => $data['quantity'],
+                'reference_type' => 'transfer',
+                'reference_id' => null,
+                'performed_by_id' => $user->id,
+            ]);
+
+
+            InventoryTransfer::create([
+                'transfer_number' => 'TR-' . strtoupper(uniqid()),
+                'source_store_id' => $inventory->store_id,
+                'destination_store_id' => $data['receiving_store'],
+                'status' => 'completed',
+                'created_by_id' => $user->id,
+            ]);
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json(['error' => 'Failed to transfer inventory'], 500);
+        }
 
         return response()->json(['message' => 'Inventory transferred successfully']);
+    }
+
+    public function transfers(Request $request)
+    {
+        $user = auth()->user();
+        $transfers = InventoryTransfer::accessibleByUser($user)->with(['sourceStore', 'destinationStore', 'createdBy'])->paginate(10);
+        return response()->json($transfers);
     }
 
     public function movements(Request $request)
