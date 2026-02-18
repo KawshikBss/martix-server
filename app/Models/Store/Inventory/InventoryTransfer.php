@@ -39,17 +39,6 @@ class InventoryTransfer extends Model
 
     public function scopeAccessibleByUser($query, User $user)
     {
-        return $query->whereHas('inventory', function ($q) use ($user) {
-            $q->whereHas(
-                'store',
-                fn($s) =>
-                $s->where('owner_id', $user->id)
-            )
-                ->orWhereHas(
-                    'product',
-                    fn($p) =>
-                    $p->where('owner_id', $user->id)
-                );
-        })->orWhere('performed_by_id', $user->id);
+        return $query->Where('created_by_id', $user->id);
     }
 }
