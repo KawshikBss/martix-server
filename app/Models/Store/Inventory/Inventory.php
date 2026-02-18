@@ -27,6 +27,11 @@ class Inventory extends Model
         return $this->hasMany(InventoryMovement::class);
     }
 
+    public function transfers()
+    {
+        return $this->hasMany(InventoryTransfer::class);
+    }
+
     public function scopeOwnedByUser($query, User $user)
     {
         return $query->where(function ($q) use ($user) {
