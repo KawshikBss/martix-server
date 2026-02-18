@@ -110,6 +110,83 @@ class InventoryController extends Controller
         return response()->json($inventories);
     }
 
+    public function find(Request $request)
+    {
+        $data = $request->validate([
+            'product' => 'required|exists:products,id',
+            'store' => 'required|exists:stores,id',
+        ]);
+
+        $user = auth()->user();
+        $inventory = Inventory::where('product_id', $data['product'])
+            ->where('store_id', $data['store'])
+            ->ownedByUser($user)
+            ->with(['store', 'product'])
+            ->first();
+        if (!$inventory) {
+            return response()->json(['message' => 'Inventory not found'], 404);
+        }
+        return response()->json(['inventory' => $inventory]);
+    }
+
+    public function transfer(Request $request)
+    {
+        $data = $request->validate([
+            'inventory' => 'required|exists:inventories,id',
+            'receiving_store' => 'required|exists:stores,id',
+            'quantity' => 'required|integer|min:1',
+        ]);
+
+        $user = auth()->user();
+
+        $inventory = Inventory::where('id', $data['inventory'])
+            ->with('store')
+            ->first();
+
+        if (!$inventory) {
+            return response()->json(['message' => 'Inventory not found'], 404);
+        }
+        if ($inventory->quantity < $data['quantity']) {
+            return response()->json(['message' => 'Insufficient inventory quantity'], 400);
+        }
+
+        $inventory->decrement('quantity', $data['quantity']);
+        $inventory->save();
+
+        InventoryMovement::create([
+            'inventory_id' => $inventory->id,
+            'type' => 'transfer',
+            'quantity' => -$data['quantity'],
+            'reference_type' => 'transfer',
+            'reference_id' => null,
+            'performed_by_id' => $user->id,
+        ]);
+
+        $receivingInventory = Inventory::firstOrCreate(
+            [
+                'product_id' => $inventory->product_id,
+                'store_id' => $data['receiving_store'],
+            ],
+            [
+                'quantity' => 0,
+            ]
+        );
+
+        $receivingInventory->increment('quantity', $data['quantity']);
+        $receivingInventory->save();
+        InventoryMovement::create([
+            'inventory_id' => $receivingInventory->id,
+            'type' => 'transfer',
+            'quantity' => $data['quantity'],
+            'reference_type' => 'transfer',
+            'reference_id' => null,
+            'performed_by_id' => $user->id,
+        ]);
+
+
+        return response()->json(['message' => 'Inventory transferred successfully']);
+    }
+
     public function movements(Request $request)
     {
         $user = auth()->user();
