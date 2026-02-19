@@ -14,10 +14,10 @@ return new class extends Migration
         Schema::create('inventory_transfers', function (Blueprint $table) {
             $table->id();
             $table->string('transfer_number')->unique();
-            $table->unsignedBigInteger('source_store_id');
-            $table->foreign('source_store_id')->references('id')->on('stores')->onDelete('cascade');
-            $table->unsignedBigInteger('destination_store_id');
-            $table->foreign('destination_store_id')->references('id')->on('stores')->onDelete('cascade');
+            $table->unsignedBigInteger('source_inventory_id');
+            $table->foreign('source_inventory_id')->references('id')->on('inventories')->onDelete('cascade');
+            $table->unsignedBigInteger('destination_inventory_id');
+            $table->foreign('destination_inventory_id')->references('id')->on('inventories')->onDelete('cascade');
             $table->string('status')->nullable();
             $table->unsignedBigInteger('created_by_id');
             $table->foreign('created_by_id')->references('id')->on('users')->onDelete('cascade');
