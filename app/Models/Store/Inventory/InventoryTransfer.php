@@ -17,14 +17,14 @@ class InventoryTransfer extends Model
 
     // protected $appends = ['current_stock_value', 'reference_text'];
 
-    public function sourceStore()
+    public function sourceInventory()
     {
-        return $this->belongsTo(Store::class, 'source_store_id');
+        return $this->belongsTo(Inventory::class, 'source_inventory_id')->with(['store', 'product']);
     }
 
-    public function destinationStore()
+    public function destinationInventory()
     {
-        return $this->belongsTo(Store::class, 'destination_store_id');
+        return $this->belongsTo(Inventory::class, 'destination_inventory_id')->with(['store', 'product']);
     }
 
     public function inventory()
