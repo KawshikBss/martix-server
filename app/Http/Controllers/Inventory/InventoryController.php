@@ -191,8 +191,8 @@ class InventoryController extends Controller
 
             InventoryTransfer::create([
                 'transfer_number' => 'TR-' . strtoupper(uniqid()),
-                'source_store_id' => $inventory->store_id,
-                'destination_store_id' => $data['receiving_store'],
+                'source_inventory_id' => $inventory->id,
+                'destination_inventory_id' => $receivingInventory->id,
                 'status' => 'completed',
                 'created_by_id' => $user->id,
             ]);
@@ -208,7 +208,78 @@ class InventoryController extends Controller
     public function transfers(Request $request)
     {
         $user = auth()->user();
-        $transfers = InventoryTransfer::accessibleByUser($user)->with(['sourceStore', 'destinationStore', 'createdBy'])->paginate(10);
+        $transfers = InventoryTransfer::accessibleByUser($user);
+
+        $search = $request->query('query', null);
+        if ($search != null && $search !== '') {
+            $like = "%{$search}%";
+            $transfers = $transfers->whereHas('sourceInventory.product', function ($sub) use ($like) {
+                $sub->where('name', 'like', $like);
+            })
+                ->orWhereHas('sourceInventory.product', function ($sub) use ($like) {
+                    $sub->where('sku', 'like', $like);
+                })
+                ->orWhereHas('sourceInventory.store', function ($sub) use ($like) {
+                    $sub->where('name', 'like', $like);
+                })
+                ->orWhereHas('destinationInventory.store', function ($sub) use ($like) {
+                    $sub->where('name', 'like', $like);
+                });
+        }
+
+        $store = $request->query('store', null);
+        if ($store != null && $store !== '') {
+            $transfers = $transfers->whereHas('sourceInventory.store', function ($sub) use ($store) {
+                $sub->where('id', $store);
+            })->orWhereHas('destinationInventory.store', function ($sub) use ($store) {
+                $sub->where('id', $store);
+            });
+        }
+
+        $product = $request->query('product', null);
+        if ($product != null && $product !== '') {
+            $transfers = $transfers->whereHas('sourceInventory.product', function ($sub) use ($product) {
+                $sub->where('id', $product);
+            })->orWhereHas('destinationInventory.product', function ($sub) use ($product) {
+                $sub->where('id', $product);
+            });
+        }
+
+        $user = $request->query('user', null);
+        if ($user != null && $user !== '') {
+            $transfers = $transfers->where('created_by_id', $user);
+        }
+
+        $status = $request->query('status', null);
+        if ($status != null && $status !== '') {
+            $transfers = $transfers->where('status', $status);
+        }
+
+        $minCreateDate = $request->query('min_create_date', null);
+        if ($minCreateDate != null && $minCreateDate !== '') {
+            $date = Carbon::parse($minCreateDate);
+            $transfers = $transfers->where('created_at', '>=', $date);
+        }
+
+        $maxCreateDate = $request->query('max_create_date', null);
+        if ($maxCreateDate != null && $maxCreateDate !== '') {
+            $date = Carbon::parse($maxCreateDate);
+            $transfers = $transfers->where('created_at', '<=', $date);
+        }
+
+        $minUpdateDate = $request->query('min_update_date', null);
+        if ($minUpdateDate != null && $minUpdateDate !== '') {
+            $date = Carbon::parse($minUpdateDate);
+            $transfers = $transfers->where('updated_at', '>=', $date);
+        }
+
+        $maxUpdateDate = $request->query('max_update_date', null);
+        if ($maxUpdateDate != null && $maxUpdateDate !== '') {
+            $date = Carbon::parse($maxUpdateDate);
+            $transfers = $transfers->where('updated_at', '<=', $date);
+        }
+
+        $transfers = $transfers->with(['sourceInventory', 'destinationInventory', 'createdBy'])->paginate(10);
         return response()->json($transfers);
     }
 
