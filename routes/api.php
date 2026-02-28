@@ -3,9 +3,9 @@
 use App\Http\Controllers\Inventory\InventoryController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\SaleController;
 use App\Http\Controllers\Store\CategoryController;
 use App\Http\Controllers\Store\CustomerController;
-use App\Http\Controllers\Store\PosController;
 use App\Http\Controllers\Store\ProductController;
 use App\Http\Controllers\Store\StoreController;
 use App\Http\Controllers\UserController;
@@ -82,12 +82,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/', [CustomerController::class, 'store']);
     });
 
-    Route::group(['prefix' => 'pos'], function () {
-        Route::get('/products', [PosController::class, 'getProducts']);
-        Route::get('/sales', [PosController::class, 'getSales']);
-        Route::post('/sales/{sale}/refund', [PosController::class, 'refundSale']);
-        Route::post('/sales/{sale}/cancel', [PosController::class, 'cancelSale']);
-        Route::get('/sales/{sale}', [PosController::class, 'getSale']);
-        Route::post('/sales', [PosController::class, 'createSale']);
+    Route::group(['prefix' => 'sales'], function () {
+        Route::get('/', [SaleController::class, 'index']);
+        Route::get('/products', [SaleController::class, 'getProductsForSale']);
+        Route::get('/{sale}', [SaleController::class, 'show']);
+        Route::post('/', [SaleController::class, 'store']);
+        Route::post('/{sale}/cancel', [SaleController::class, 'cancel']);
+        Route::post('/{sale}/refund', [SaleController::class, 'refund']);
     });
 });
