@@ -87,6 +87,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/products', [SaleController::class, 'getProductsForSale']);
         Route::get('/{sale}', [SaleController::class, 'show']);
         Route::post('/', [SaleController::class, 'store']);
+        Route::post('/{sale}/complete', [SaleController::class, 'complete']);
         Route::post('/{sale}/cancel', [SaleController::class, 'cancel']);
         Route::post('/{sale}/refund', [SaleController::class, 'refund']);
     });

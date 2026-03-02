@@ -119,7 +119,9 @@ class SaleController extends Controller
         unset($data['items']);
         $data['user_id'] = $user->id;
 
-        $saleNumber = ($data['sale_type'] === 'pos' ? 'POS-' : 'ORD-') . strtoupper(uniqid());
+        $isPosSale = $data['sale_type'] === 'pos';
+
+        $saleNumber = ($isPosSale ? 'POS-' : 'ORD-') . strtoupper(uniqid());
         $data['sale_number'] = $saleNumber;
 
         if ($data['due_amount'] > 0) {
@@ -134,6 +136,10 @@ class SaleController extends Controller
 
         if ($data['payment_details'] && count($data['payment_details'])) {
             $data['payment_details'] = json_encode($data['payment_details']);
+        }
+
+        if ($isPosSale) {
+            $data['status'] = 'completed';
         }
 
         DB::beginTransaction();
@@ -162,7 +168,7 @@ class SaleController extends Controller
                     'tax' => $item['tax'],
                     'total' => $item['itemTotal'],
                 ]);
-                if ($data['sale_type'] === 'pos') {
+                if ($isPosSale) {
                     $inventoryMovementData['inventory_id'] = $item['inventory_id'];
                     $inventoryMovementData['quantity'] = -$item['quantity'];
                     InventoryMovement::create($inventoryMovementData);
@@ -250,8 +256,58 @@ class SaleController extends Controller
         ]);
     }
 
+    public function complete(Request $request, Sale $sale)
+    {
+        if ($sale->status === 'cancelled') {
+            abort(400, 'Cannot complete cancelled order');
+        }
+        if ($sale->status === 'refunded') {
+            abort(400, 'Cannot complete refunded order');
+        }
+        if ($sale->status === 'completed') {
+            abort(400, 'Order already completed');
+        }
+
+        $user = Auth::user();
+
+        $inventoryMovementData = [
+            'type' => 'sale',
+            'reference_type' => 'sale',
+            'reference_id' => $sale->id,
+            'performed_by_id' => $user->id
+        ];
+
+        try {
+            foreach ($sale->items as $item) {
+                $inventoryMovementData['inventory_id'] = $item['inventory_id'];
+                $inventoryMovementData['quantity'] = -$item['quantity'];
+                InventoryMovement::create($inventoryMovementData);
+                $inventory = Inventory::find($item['inventory_id']);
+                $inventory->decrement('quantity', $item['quantity']);
+            }
+            DB::commit();
+        } catch (Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+        $sale->update([
+            'status' => 'completed'
+        ]);
+
+        return response()->json($sale);
+    }
+
     public function cancel(Request $request, Sale $sale)
     {
+        if ($sale->status === 'cancelled') {
+            abort(400, 'Order already cancelled');
+        }
+        if ($sale->status === 'refunded') {
+            abort(400, 'Cannot cancel refunded order');
+        }
+        if ($sale->status === 'completed') {
+            abort(400, 'Cannot cancel completed order');
+        }
         $sale->update([
             'status' => 'canceled'
         ]);
@@ -261,6 +317,36 @@ class SaleController extends Controller
 
     public function refund(Request $request, Sale $sale)
     {
+        if ($sale->status === 'cancelled') {
+            abort(400, 'Cannot refund cancelled order');
+        }
+        if ($sale->status === 'refunded') {
+            abort(400, 'Order already refunded');
+        }
+        if ($sale->status === 'completed') {
+            abort(400, 'Cannot refund completed order');
+        }
+        $items = $sale->items;
+        DB::beginTransaction();
+        try {
+            foreach ($items as $item) {
+                $inventory = Inventory::find($item->inventory_id);
+                $quantity = abs($item->quantity);
+                $inventory->increment('quantity', $quantity);
+                InventoryMovement::create([
+                    'inventory_id' => $item->inventory_id,
+                    'type' => 'sale_cancellation',
+                    'quantity' => $quantity,
+                    'reference_type' => 'sale',
+                    'reference_id' => $sale->id,
+                    'performed_by_id' => Auth::id()
+                ]);
+                DB::commit();
+            }
+        } catch (Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
         $sale->update([
             'status' => 'refunded'
         ]);
