@@ -8,13 +8,14 @@ use App\Models\Store\Inventory\InventoryMovement;
 use App\Models\Store\Inventory\InventoryTransfer;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class InventoryController extends Controller
 {
     public function index(Request $request)
     {
-        $user = auth()->user();
+        $user = Auth::user();
         $inventories = Inventory::ownedByUser($user)
             ->with(['store', 'product']);
         $search = $request->query('query', null);
@@ -119,7 +120,7 @@ class InventoryController extends Controller
             'store' => 'required|exists:stores,id',
         ]);
 
-        $user = auth()->user();
+        $user = Auth::user();
         $inventory = Inventory::where('product_id', $data['product'])
             ->where('store_id', $data['store'])
             ->ownedByUser($user)
@@ -139,7 +140,7 @@ class InventoryController extends Controller
             'quantity' => 'required|integer|min:1',
         ]);
 
-        $user = auth()->user();
+        $user = Auth::user();
 
         $inventory = Inventory::where('id', $data['inventory'])
             ->with('store')
@@ -193,6 +194,7 @@ class InventoryController extends Controller
                 'transfer_number' => 'TR-' . strtoupper(uniqid()),
                 'source_inventory_id' => $inventory->id,
                 'destination_inventory_id' => $receivingInventory->id,
+                'quantity' => $data['quantity'],
                 'status' => 'completed',
                 'created_by_id' => $user->id,
             ]);
@@ -207,7 +209,7 @@ class InventoryController extends Controller
 
     public function transfers(Request $request)
     {
-        $user = auth()->user();
+        $user = Auth::user();
         $transfers = InventoryTransfer::accessibleByUser($user);
 
         $search = $request->query('query', null);
@@ -285,7 +287,7 @@ class InventoryController extends Controller
 
     public function movements(Request $request)
     {
-        $user = auth()->user();
+        $user = Auth::user();
         $movements = InventoryMovement::accessibleByUser($user);
 
         $search = $request->query('query', null);
@@ -336,7 +338,7 @@ class InventoryController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        $user = auth()->user();
+        $user = Auth::user();
 
         $inventory = Inventory::where('product_id', $data['product'])->where('store_id', $data['store'])->first();
 
@@ -368,5 +370,48 @@ class InventoryController extends Controller
         ]);
 
         return response()->json(['message' => 'Inventory adjusted successfully']);
+    }
+
+    public function metrics()
+    {
+        $user = Auth::user();
+        $inventories = Inventory::ownedByUser($user);
+        $totalActiveItems = $inventories->where('quantity', '>', 0)->count();
+        $totalInventoryValue = $inventories->where('quantity', '>', 0)->sum(DB::raw('quantity * selling_price'));
+        $lowStockItems = $inventories->whereColumn('quantity', '<=', 'reorder_level')->count();
+        $outOfStockItems = $inventories->where('quantity', '<=', 0)->count();
+        $expiringSoonItems = $inventories->whereBetween('expiry_date', [Carbon::now(), Carbon::now()->addMonth()])->count();
+        $expiredItems = $inventories->where('expiry_date', '<=', Carbon::now())->count();
+
+        return response()->json([
+            'total_active_items' => $totalActiveItems,
+            'total_inventory_value' => $totalInventoryValue,
+            'low_stock_items' => $lowStockItems,
+            'out_of_stock_items' => $outOfStockItems,
+            'expiring_soon_items' => $expiringSoonItems,
+            'expired_items' => $expiredItems,
+        ]);
+    }
+
+    public function transferMetrics()
+    {
+        $user = Auth::user();
+        $transfers = InventoryTransfer::accessibleByUser($user);
+        $totalTransfers = $transfers->count();
+        $totalCompleted = $transfers->where('status', 'completed')->count();
+        $totalPending = $transfers->where('status', 'pending')->count();
+        $totalTransfersQuantity = $transfers->sum('quantity');
+        $totalTransfersValue = $transfers->where('status', 'completed')
+            ->join('inventories as src', 'src.id', '=', 'inventory_transfers.source_inventory_id')
+            ->join('products', 'products.id', '=', 'src.product_id')
+            ->sum(DB::raw('inventory_transfers.quantity * products.cost_price'));;
+
+        return response()->json([
+            'total_transfers' => $totalTransfers,
+            'total_completed' => $totalCompleted,
+            'total_pending' => $totalPending,
+            'total_transfers_quantity' => $totalTransfersQuantity,
+            'total_transfers_value' => $totalTransfersValue,
+        ]);
     }
 }
