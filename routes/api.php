@@ -75,6 +75,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/transfers', [InventoryController::class, 'transfers']);
         Route::get('/movements', [InventoryController::class, 'movements']);
         Route::post('/adjustment', [InventoryController::class, 'adjustment']);
+        Route::get('/metrics', [InventoryController::class, 'metrics']);
+        Route::get('/transfer-metrics', [InventoryController::class, 'transferMetrics']);
     });
 
     Route::group(['prefix' => 'customers'], function () {
@@ -90,5 +92,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/{sale}/complete', [SaleController::class, 'complete']);
         Route::post('/{sale}/cancel', [SaleController::class, 'cancel']);
         Route::post('/{sale}/refund', [SaleController::class, 'refund']);
+        Route::get('/pos-metrics', [SaleController::class, 'posMetrics']);
+        Route::get('/order-metrics', [SaleController::class, 'orderMetrics']);
     });
 });
