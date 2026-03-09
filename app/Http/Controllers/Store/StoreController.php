@@ -290,4 +290,22 @@ class StoreController extends Controller
 
         return response()->json(['message' => 'Product added to store inventory', 'data' => $data], 200);
     }
+
+    public function metrics()
+    {
+        $user = auth()->user();
+        $stores = $user->stores()->withCount('inventories')->get();
+
+        $totalStores = $stores->count();
+        $activeStores = $stores->where('is_active', true)->count();
+        $inactiveStores = $stores->where('is_active', false)->count();
+        $averageInventoryPerStore = $totalStores > 0 ? round($stores->avg('inventories_count'), 2) : 0;
+
+        return response()->json([
+            'total_stores' => $totalStores,
+            'active_stores' => $activeStores,
+            'inactive_stores' => $inactiveStores,
+            'average_inventory_per_store' => $averageInventoryPerStore
+        ]);
+    }
 }
