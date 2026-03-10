@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Inventory\InventoryController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
@@ -20,6 +21,10 @@ require __DIR__ . '/../routes/auth.php';
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::group(['prefix' => 'users'], function () {
         Route::get('/', [UserController::class, 'index']);
+    });
+
+    Route::group(['prefix' => 'dashboard'], function () {
+        Route::get('/metrics', [DashboardController::class, 'metrics']);
     });
 
     Route::group(['prefix' => 'roles'], function () {
