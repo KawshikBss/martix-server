@@ -376,12 +376,12 @@ class InventoryController extends Controller
     {
         $user = Auth::user();
         $inventories = Inventory::ownedByUser($user);
-        $totalActiveItems = $inventories->where('quantity', '>', 0)->count();
-        $totalInventoryValue = $inventories->where('quantity', '>', 0)->sum(DB::raw('quantity * selling_price'));
-        $lowStockItems = $inventories->whereColumn('quantity', '<=', 'reorder_level')->count();
-        $outOfStockItems = $inventories->where('quantity', '<=', 0)->count();
-        $expiringSoonItems = $inventories->whereBetween('expiry_date', [Carbon::now(), Carbon::now()->addMonth()])->count();
-        $expiredItems = $inventories->where('expiry_date', '<=', Carbon::now())->count();
+        $totalActiveItems = (clone $inventories)->where('quantity', '>', 0)->count();
+        $totalInventoryValue = (clone $inventories)->where('quantity', '>', 0)->sum(DB::raw('quantity * selling_price'));
+        $lowStockItems = (clone $inventories)->whereColumn('quantity', '<=', 'reorder_level')->count();
+        $outOfStockItems = (clone $inventories)->where('quantity', '<=', 0)->count();
+        $expiringSoonItems = (clone $inventories)->whereBetween('expiry_date', [Carbon::now(), Carbon::now()->addMonth()])->count();
+        $expiredItems = (clone $inventories)->where('expiry_date', '<=', Carbon::now())->count();
 
         return response()->json([
             'total_active_items' => $totalActiveItems,
@@ -397,11 +397,11 @@ class InventoryController extends Controller
     {
         $user = Auth::user();
         $transfers = InventoryTransfer::accessibleByUser($user);
-        $totalTransfers = $transfers->count();
-        $totalCompleted = $transfers->where('status', 'completed')->count();
-        $totalPending = $transfers->where('status', 'pending')->count();
-        $totalTransfersQuantity = $transfers->sum('quantity');
-        $totalTransfersValue = $transfers->where('status', 'completed')
+        $totalTransfers = (clone $transfers)->count();
+        $totalCompleted = (clone $transfers)->where('status', 'completed')->count();
+        $totalPending = (clone $transfers)->where('status', 'pending')->count();
+        $totalTransfersQuantity = (clone $transfers)->sum('quantity');
+        $totalTransfersValue = (clone $transfers)->where('status', 'completed')
             ->join('inventories as src', 'src.id', '=', 'inventory_transfers.source_inventory_id')
             ->join('products', 'products.id', '=', 'src.product_id')
             ->sum(DB::raw('inventory_transfers.quantity * products.cost_price'));;
@@ -412,6 +412,25 @@ class InventoryController extends Controller
             'total_pending' => $totalPending,
             'total_transfers_quantity' => $totalTransfersQuantity,
             'total_transfers_value' => $totalTransfersValue,
+        ]);
+    }
+
+    public function movementMetrics()
+    {
+        $user = Auth::user();
+        $movements = InventoryMovement::accessibleByUser($user);
+        $totalMovements = (clone $movements)->count();
+        $stockAdded = (clone $movements)->where('quantity', '>', 0)->sum('quantity');
+        $stockRemoved = (clone $movements)->where('quantity', '<', 0)->sum('quantity');
+        $adjustments = (clone $movements)->where('type', 'adjustment')->count();
+        $netStockChange = $stockAdded + $stockRemoved;
+
+        return response()->json([
+            'total_movements' => $totalMovements,
+            'stock_added' => $stockAdded,
+            'stock_removed' => $stockRemoved,
+            'adjustments' => $adjustments,
+            'net_stock_change' => $netStockChange,
         ]);
     }
 }
