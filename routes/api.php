@@ -52,6 +52,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::group(['prefix' => 'stores'], function () {
         Route::get('/', [StoreController::class, 'index']);
+        Route::get('/metrics', [StoreController::class, 'metrics']);
         Route::get('/{id}', [StoreController::class, 'show']);
         Route::post('/', [StoreController::class, 'store']);
         Route::post('/update/{id}', [StoreController::class, 'update']);
@@ -87,12 +88,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::group(['prefix' => 'sales'], function () {
         Route::get('/', [SaleController::class, 'index']);
         Route::get('/products', [SaleController::class, 'getProductsForSale']);
+        Route::get('/pos-metrics', [SaleController::class, 'posMetrics']);
+        Route::get('/order-metrics', [SaleController::class, 'orderMetrics']);
         Route::get('/{sale}', [SaleController::class, 'show']);
         Route::post('/', [SaleController::class, 'store']);
         Route::post('/{sale}/complete', [SaleController::class, 'complete']);
         Route::post('/{sale}/cancel', [SaleController::class, 'cancel']);
         Route::post('/{sale}/refund', [SaleController::class, 'refund']);
-        Route::get('/pos-metrics', [SaleController::class, 'posMetrics']);
-        Route::get('/order-metrics', [SaleController::class, 'orderMetrics']);
     });
 });
