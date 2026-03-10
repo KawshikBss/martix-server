@@ -84,8 +84,8 @@ class Product extends Model
         return 'In Stock';
     }
 
-    public function saleItem()
+    public function saleItems()
     {
-        return $this->belongsTo(SaleItem::class);
+        return $this->hasMany(SaleItem::class);
     }
 }
