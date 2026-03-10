@@ -10,6 +10,7 @@ use App\Models\Store\Product;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
@@ -17,7 +18,7 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        $user = auth()->user();
+        $user = Auth::user();
         $storeIds = $user->stores->pluck('id')->toArray();
         $managerStoreIds = Store::where('manager_id', $user->id)->pluck('id')->toArray();
         $storeIds = array_merge($storeIds, $managerStoreIds);
@@ -153,14 +154,14 @@ class ProductController extends Controller
 
     public function show($id)
     {
-        $user = auth()->user();
+        $user = Auth::user();
         $product = $user->products()->with(['owner', 'variants', 'variants.inventories', 'inventories', 'variants.parent'])->findOrFail($id);
         return response()->json($product);
     }
 
     public function store(Request $request)
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
@@ -263,7 +264,7 @@ class ProductController extends Controller
 
     public function update(Request $request, $id)
     {
-        $user = auth()->user();
+        $user = Auth::user();
         $product = $user->products()->findOrFail($id);
 
         $validator = Validator::make($request->all(), [
@@ -338,9 +339,25 @@ class ProductController extends Controller
 
     public function destroy($id)
     {
-        $user = auth()->user();
+        $user = Auth::user();
         $product = $user->products()->findOrFail($id);
         $product->delete();
         return response()->json(null, 204);
+    }
+
+    public function metrics()
+    {
+        $user = Auth::user();
+        $storeIds = $user->stores->pluck('id')->toArray();
+        $managerStoreIds = Store::where('manager_id', $user->id)->pluck('id')->toArray();
+        $storeIds = array_merge($storeIds, $managerStoreIds);
+        $productsInStores = DB::table('store_products')->whereIn('store_id', $storeIds)->pluck('product_id')->toArray();
+        $products = Product::where(function ($q) use ($productsInStores) {
+            foreach ($productsInStores as $productId) {
+                $q->where('id', $productId);
+            }
+        })->orWhere('owner_id', $user->id)->where('is_variation', false);
+        $totalProducts = (clone $products)->count();
+        $activeProducts = (clone $products)->where('is_active', true)->count();
     }
 }
