@@ -353,4 +353,43 @@ class SaleController extends Controller
 
         return response()->json($sale);
     }
+
+    public function posMetrics(Request $request)
+    {
+        $user = Auth::user();
+        $sales = Sale::where('user_id', $user->id)->where('sale_type', 'pos');
+        $completedSales = (clone $sales)->where('status', 'completed')->get();
+        $totalSales = $completedSales->sum('grand_total');
+        $totalTransactions = $completedSales->count();
+        $avgTicketValue = $totalTransactions > 0 ? $totalSales / $totalTransactions : 0;
+        $totalRefunded = (clone $sales)->where('status', 'refunded')->sum('grand_total');
+        $netRevenue = $totalSales - $totalRefunded;
+        return response()->json([
+            'total_sales' => $totalSales,
+            'total_transactions' => $totalTransactions,
+            'avg_ticket_value' => $avgTicketValue,
+            'total_refunded' => $totalRefunded,
+            'net_revenue' => $netRevenue
+        ]);
+    }
+
+    public function orderMetrics(Request $request)
+    {
+        $user = Auth::user();
+        $sales = Sale::where('user_id', $user->id)->where('sale_type', 'order');
+        $totalSales = (clone $sales)->count();
+        $totalCompleted = (clone $sales)->where('status', 'completed')->count();
+        $totalPending = (clone $sales)->where('status', 'pending')->count();
+        $totalCancelled = (clone $sales)->where('status', 'canceled')->count();
+        $totalDue = (clone $sales)->whereNot('payment_status', 'paid')->count();
+        $totalDueAmount = (clone $sales)->whereNot('payment_status', 'paid')->sum('due_amount');
+        return response()->json([
+            'total_sales' => $totalSales,
+            'total_pending' => $totalPending,
+            'total_completed' => $totalCompleted,
+            'total_cancelled' => $totalCancelled,
+            'total_due' => $totalDue,
+            'total_due_amount' => $totalDueAmount,
+        ]);
+    }
 }
