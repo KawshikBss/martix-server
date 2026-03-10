@@ -78,6 +78,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/adjustment', [InventoryController::class, 'adjustment']);
         Route::get('/metrics', [InventoryController::class, 'metrics']);
         Route::get('/transfer-metrics', [InventoryController::class, 'transferMetrics']);
+        Route::get('/movement-metrics', [InventoryController::class, 'movementMetrics']);
     });
 
     Route::group(['prefix' => 'customers'], function () {
