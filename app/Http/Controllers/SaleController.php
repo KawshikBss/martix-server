@@ -392,4 +392,30 @@ class SaleController extends Controller
             'total_due_amount' => $totalDueAmount,
         ]);
     }
+
+    public function graph(Request $request)
+    {
+        $user = Auth::user();
+
+        $sale_type = $request->query('sale_type', 'order');
+
+        $sales = Sale::where('user_id', $user->id)->where('sale_type', $sale_type);
+        $data = $sales->get()
+            ->filter(function ($sale) {
+                return $sale->created_at->month === now()->month;
+            })
+            ->groupBy(function ($sale) {
+                return $sale->created_at->format('D');
+            })
+            ->sortBy(function ($group, $key) {
+                return Carbon::parse($key)->timestamp;
+            })
+            ->map(function ($group) {
+                return [
+                    'count' => $group->count(),
+                    'total' => $group->sum('grand_total'),
+                ];
+            });
+        return response()->json($data);
+    }
 }

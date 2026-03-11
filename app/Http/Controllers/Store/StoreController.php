@@ -6,16 +6,18 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Store\StoreCollection;
 use App\Http\Resources\Store\StoreResource;
 use App\Models\Store;
+use App\Models\Store\Sale\Sale;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class StoreController extends Controller
 {
     public function index(Request $request)
     {
-        $user = auth()->user();
+        $user = Auth::user();
         $stores = $user->stores();
         $search = $request->query('query', null);
         if ($search != null && $search !== '') {
@@ -128,14 +130,14 @@ class StoreController extends Controller
 
     public function show($id)
     {
-        $user = auth()->user();
+        $user = Auth::user();
         $store = $user->stores()->findOrFail($id)->toResource(StoreResource::class);
         return response()->json($store);
     }
 
     public function store(Request $request)
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         $data = $request->validate([
             'name' => 'required|string|max:255',
@@ -190,7 +192,7 @@ class StoreController extends Controller
 
     public function update(Request $request, $id)
     {
-        $user = auth()->user();
+        $user = Auth::user();
         $store = $user->stores()->findOrFail($id);
 
         $data = $request->validate([
@@ -252,7 +254,7 @@ class StoreController extends Controller
 
     public function toggleStatus($id)
     {
-        $user = auth()->user();
+        $user = Auth::user();
         $store = $user->stores()->findOrFail($id);
         $res = $store->update(['is_active' => !$store->is_active]);
         if (!$res) {
@@ -263,7 +265,7 @@ class StoreController extends Controller
 
     public function destroy($id)
     {
-        $user = auth()->user();
+        $user = Auth::user();
         $store = $user->stores()->findOrFail($id);
         $store->delete();
         return response()->json(null, 204);
@@ -271,7 +273,7 @@ class StoreController extends Controller
 
     public function addProduct(Request $request, Store $store)
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         $data = $request->validate([
             'product_id' => 'required|exists:products,id',
@@ -293,7 +295,7 @@ class StoreController extends Controller
 
     public function metrics()
     {
-        $user = auth()->user();
+        $user = Auth::user();
         $stores = $user->stores()->withCount('inventories')->get();
 
         $totalStores = $stores->count();
@@ -307,5 +309,29 @@ class StoreController extends Controller
             'inactive_stores' => $inactiveStores,
             'average_inventory_per_store' => $averageInventoryPerStore
         ]);
+    }
+
+    public function salesGraph(Request $request)
+    {
+        $user = Auth::user();
+
+        $sales = Sale::where('user_id', $user->id);
+        $data = $sales->get()
+            ->filter(function ($sale) {
+                return $sale->created_at->month === now()->month;
+            })
+            ->groupBy(function ($sale) {
+                return $sale->store->name;
+            })
+            /* ->sortBy(function ($group, $key) {
+                return Carbon::parse($key)->timestamp;
+            }) */
+            ->map(function ($group) {
+                return [
+                    'count' => $group->count(),
+                    'total' => $group->sum('grand_total'),
+                ];
+            });
+        return response()->json($data);
     }
 }
