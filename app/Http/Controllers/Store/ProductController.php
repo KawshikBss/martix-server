@@ -345,7 +345,19 @@ class ProductController extends Controller
         return response()->json(null, 204);
     }
 
-    public function metrics()
+    public function topProducts(Request $request)
+    {
+        $topProducts = DB::table('products')
+            ->join('sale_items', 'products.id', '=', 'sale_items.product_id')
+            ->select('products.*', DB::raw('SUM(sale_items.quantity) as total_sold'))
+            ->groupBy('products.id')
+            ->orderBy('total_sold', 'desc')
+            ->take(10)
+            ->get();
+        return response()->json($topProducts);
+    }
+
+    public function categoryGraph()
     {
         $user = Auth::user();
         $storeIds = $user->stores->pluck('id')->toArray();
@@ -356,8 +368,12 @@ class ProductController extends Controller
             foreach ($productsInStores as $productId) {
                 $q->where('id', $productId);
             }
-        })->orWhere('owner_id', $user->id)->where('is_variation', false);
-        $totalProducts = (clone $products)->count();
-        $activeProducts = (clone $products)->where('is_active', true)->count();
+        })->orWhere('owner_id', $user->id)->where('is_variation', false)->with('category')->get();
+
+        $data = $products->groupBy('category.name')->map(function ($group) {
+            return $group->count();
+        });
+
+        return response()->json($data);
     }
 }

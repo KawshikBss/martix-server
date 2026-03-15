@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Store\StoreCollection;
 use App\Http\Resources\Store\StoreResource;
 use App\Models\Store;
+use App\Models\Store\Inventory\Inventory;
+use App\Models\Store\Inventory\InventoryTransfer;
 use App\Models\Store\Sale\Sale;
 use Exception;
 use Illuminate\Http\Request;
@@ -311,6 +313,27 @@ class StoreController extends Controller
         ]);
     }
 
+    public function stocksGraph()
+    {
+        $user = Auth::user();
+
+        $inventories = Inventory::ownedByUser($user)->get()
+            ->filter(function ($sale) {
+                return $sale->created_at->month === now()->month;
+            })
+            ->groupBy(function ($inventory) {
+                return $inventory->store->name;
+            })->map(function ($group) {
+                return [
+                    'count' => $group->count(),
+                    'quantity' => $group->sum('quantity'),
+                    'value' => $group->sum('quantity * selling_price'),
+                ];
+            });
+
+        return response()->json($inventories);
+    }
+
     public function salesGraph(Request $request)
     {
         $user = Auth::user();
@@ -333,5 +356,23 @@ class StoreController extends Controller
                 ];
             });
         return response()->json($data);
+    }
+
+    public function transfersGraph()
+    {
+        $user = Auth::user();
+        $transfers = InventoryTransfer::accessibleByUser($user)
+            ->with(['sourceInventory.store', 'destinationInventory.store'])
+            ->get()
+            ->groupBy('sourceInventory.store.name')
+            ->map(function ($sourceGroup) {
+                return $sourceGroup->groupBy('destinationInventory.store.name')
+                    ->map(function ($destGroup) {
+                        return [
+                            'count' => $destGroup->sum('quantity'),
+                        ];
+                    });
+            });
+        return response()->json($transfers);
     }
 }

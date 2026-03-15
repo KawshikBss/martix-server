@@ -433,4 +433,97 @@ class InventoryController extends Controller
             'net_stock_change' => $netStockChange,
         ]);
     }
+
+    public function statusGraph()
+    {
+        $user = Auth::user();
+        $inventories = Inventory::ownedByUser($user);
+        $totalInStock = (clone $inventories)->whereColumn('quantity', '>', 'reorder_level')->count();
+        $totalLowStock = (clone $inventories)->whereColumn('quantity', '<=', 'reorder_level')->count();
+        $totalOutStock = (clone $inventories)->where('quantity', '<=', 0)->count();
+        return response()->json([
+            'in_stock' => $totalInStock,
+            'low_stock' => $totalLowStock,
+            'out_of_stock' => $totalOutStock,
+        ]);
+    }
+
+    public function valueByCategoryGraph()
+    {
+        $user = Auth::user();
+        $categories = Inventory::ownedByUser($user)
+            ->with('product.category')
+            ->get()
+            ->groupBy('product.category.name')
+            ->map(function ($items) {
+                return $items->sum(function ($item) {
+                    return $item->quantity * $item->selling_price;
+                });
+            });
+
+        return response()->json($categories);
+    }
+
+    public function movementLevelsGraph()
+    {
+        $user = Auth::user();
+        $movements = InventoryMovement::accessibleByUser($user)->get()
+            ->filter(function ($sale) {
+                return $sale->created_at->month === now()->month;
+            })->groupBy(function ($movement) {
+                return $movement->created_at->format('d');
+            })->map(function ($group) {
+                return [
+                    'count' => $group->count(),
+                    'stock_in' => $group->where('quantity', '>', 0)->sum('quantity'),
+                    'stock_out' => $group->where('quantity', '<', 0)->sum('quantity'),
+                ];
+            });
+        return response()->json($movements);
+    }
+
+    public function movementTypesGraph()
+    {
+        $user = Auth::user();
+        $movements = InventoryMovement::accessibleByUser($user)->get()->groupBy(function ($movement) {
+            return $movement->type;
+        })->map(function ($group) {
+            return [
+                'count' => $group->count(),
+                'total' => $group->sum('quantity'),
+            ];
+        });
+        return response()->json($movements);
+    }
+
+    public function transferLevelsGraph()
+    {
+        $user = Auth::user();
+        $transfers = InventoryTransfer::accessibleByUser($user)->get()
+            ->filter(function ($sale) {
+                return $sale->created_at->month === now()->month;
+            })->groupBy(function ($transfer) {
+                return $transfer->created_at->format('d');
+            })->map(function ($group) {
+                return [
+                    'count' => $group->sum('quantity'),
+                ];
+            });
+        return response()->json($transfers);
+    }
+
+    public function transfersByStoresGraph()
+    {
+        $user = Auth::user();
+        $transfers = InventoryTransfer::accessibleByUser($user)
+            ->with('sourceInventory.store')
+            ->get()
+            ->groupBy('sourceInventory.store.name')
+            ->map(function ($group) {
+                return [
+                    'count' => $group->sum('quantity'),
+                ];
+            });
+        return response()->json($transfers);
+    }
 }

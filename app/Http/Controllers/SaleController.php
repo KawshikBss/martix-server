@@ -418,4 +418,64 @@ class SaleController extends Controller
             });
         return response()->json($data);
     }
+
+    public function revenueGraph(Request $request)
+    {
+        $user = Auth::user();
+
+        $sales = Sale::where('user_id', $user->id);
+        $totalRevenue = (clone $sales)->where('status', 'completed')->sum('grand_total');
+        $totalRefunded = (clone $sales)->where('status', 'refunded')->sum('grand_total');
+        return response()->json([
+            'revenue' => $totalRevenue,
+            'refunded' => $totalRefunded,
+        ]);
+    }
+
+    public function statusGraph(Request $request)
+    {
+        $user = Auth::user();
+
+        $sales = Sale::where('user_id', $user->id);
+        $totalCompleted = (clone $sales)->where('status', 'completed')->count();
+        $totalPending = (clone $sales)->where('status', 'pending')->count();
+        $totalCancelled = (clone $sales)->where('status', 'cancelled')->count();
+        $totalRefunded = (clone $sales)->where('status', 'refunded')->count();
+        return response()->json([
+            'completed' => $totalCompleted,
+            'pending' => $totalPending,
+            'cancelled' => $totalCancelled,
+            'refunded' => $totalRefunded,
+        ]);
+    }
+
+    public function paymentStatusGraph(Request $request)
+    {
+        $user = Auth::user();
+
+        $sales = Sale::where('user_id', $user->id);
+        $totalPaid = (clone $sales)->where('payment_status', 'paid')->count();
+        $totalUnpaid = (clone $sales)->where('payment_status', 'unpaid')->count();
+        $totalPartial = (clone $sales)->where('payment_status', 'partial')->count();
+        return response()->json([
+            'paid' => $totalPaid,
+            'unpaid' => $totalUnpaid,
+            'partial' => $totalPartial,
+        ]);
+    }
+
+    public function paymentMethodGraph(Request $request)
+    {
+        $user = Auth::user();
+
+        $sales = Sale::where('user_id', $user->id);
+        $totalCash = (clone $sales)->where('payment_method', 'Cash')->count();
+        $totalCard = (clone $sales)->where('payment_method', 'Card')->count();
+        $totalMixed = (clone $sales)->where('payment_method', 'Mixed')->count();
+        return response()->json([
+            'cash' => $totalCash,
+            'card' => $totalCard,
+            'mixed' => $totalMixed,
+        ]);
+    }
 }
