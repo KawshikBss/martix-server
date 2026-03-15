@@ -58,7 +58,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::group(['prefix' => 'stores'], function () {
         Route::get('/', [StoreController::class, 'index']);
         Route::get('/metrics', [StoreController::class, 'metrics']);
+        Route::get('/stocks-graph', [StoreController::class, 'stocksGraph']);
         Route::get('/sales-graph', [StoreController::class, 'salesGraph']);
+        Route::get('/transfers-graph', [StoreController::class, 'transfersGraph']);
         Route::get('/{id}', [StoreController::class, 'show']);
         Route::post('/', [StoreController::class, 'store']);
         Route::post('/update/{id}', [StoreController::class, 'update']);
@@ -69,6 +71,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::group(['prefix' => 'products'], function () {
         Route::get('/', [ProductController::class, 'index']);
+        Route::get('/top-selling', [ProductController::class, 'topProducts']);
+        Route::get('/category-graph', [ProductController::class, 'categoryGraph']);
         Route::get('/{id}', [ProductController::class, 'show']);
         Route::post('/', [ProductController::class, 'store']);
         Route::post('/update/{id}', [ProductController::class, 'update']);
@@ -85,6 +89,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/metrics', [InventoryController::class, 'metrics']);
         Route::get('/transfer-metrics', [InventoryController::class, 'transferMetrics']);
         Route::get('/movement-metrics', [InventoryController::class, 'movementMetrics']);
+        Route::get('/status-graph', [InventoryController::class, 'statusGraph']);
+        Route::get('/category-value-graph', [InventoryController::class, 'valueByCategoryGraph']);
+        Route::get('/movement-levels-graph', [InventoryController::class, 'movementLevelsGraph']);
+        Route::get('/movement-types-graph', [InventoryController::class, 'movementTypesGraph']);
+        Route::get('/transfer-levels-graph', [InventoryController::class, 'transferLevelsGraph']);
+        Route::get('/transfer-stores-graph', [InventoryController::class, 'transfersByStoresGraph']);
     });
 
     Route::group(['prefix' => 'customers'], function () {
@@ -98,6 +108,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/pos-metrics', [SaleController::class, 'posMetrics']);
         Route::get('/order-metrics', [SaleController::class, 'orderMetrics']);
         Route::get('/graph', [SaleController::class, 'graph']);
+        Route::get('/revenue-graph', [SaleController::class, 'revenueGraph']);
+        Route::get('/status-graph', [SaleController::class, 'statusGraph']);
+        Route::get('/payment-status-graph', [SaleController::class, 'paymentStatusGraph']);
+        Route::get('/payment-graph', [SaleController::class, 'paymentMethodGraph']);
         Route::get('/{sale}', [SaleController::class, 'show']);
         Route::post('/', [SaleController::class, 'store']);
         Route::post('/{sale}/complete', [SaleController::class, 'complete']);
