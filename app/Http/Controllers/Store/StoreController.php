@@ -9,6 +9,7 @@ use App\Models\Store;
 use App\Models\Store\Inventory\Inventory;
 use App\Models\Store\Inventory\InventoryTransfer;
 use App\Models\Store\Sale\Sale;
+use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -125,7 +126,7 @@ class StoreController extends Controller
             $stores = $stores->where('updated_at', '<=', $date);
         }
 
-        $stores = $stores->paginate(2);
+        $stores = $stores->paginate();
 
         return new StoreCollection($stores);
     }
@@ -153,11 +154,7 @@ class StoreController extends Controller
             'address' => 'nullable|string|max:500',
             'address_2' => 'nullable|string|max:500',
             'manager_id' => 'nullable|exists:users,id',
-            'staff_list' => 'nullable|array'
         ]);
-
-        $staffList = $data['staff_list'] ?? [];
-        unset($data['staff_list']);
 
         $data['owner_id'] = $user->id;
 
@@ -173,15 +170,6 @@ class StoreController extends Controller
 
         try {
             $store = $user->stores()->create($data);
-
-            if (count($staffList) > 0) {
-                foreach ($staffList as $staffRecord) {
-                    $staffId = $staffRecord['staff_id'];
-                    $roleId = $staffRecord['role_id'];
-                    $storeUserData = ['store_id' => $store['id'], 'user_id' => $staffId, 'role_id' => $roleId];
-                    $store->staff()->create($storeUserData);
-                }
-            }
 
             DB::commit();
 
@@ -209,11 +197,7 @@ class StoreController extends Controller
             'address' => 'nullable|string|max:500',
             'address_2' => 'nullable|string|max:500',
             'manager_id' => 'nullable|exists:users,id',
-            'staff_list' => 'nullable|array'
         ]);
-
-        $newStaffList = $data['staff_list'] ?? [];
-        unset($data['staff_list']);
 
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('profiles', 'public');
@@ -222,29 +206,6 @@ class StoreController extends Controller
         DB::beginTransaction();
         try {
             $store->update($data);
-
-            // Sync staff: add new, update existing roles, remove missing
-            $existing = $store->staff()->get(); // collection of store-staff records
-            $existingIds = $existing->pluck('user_id')->toArray();
-            $newIds = array_map(fn($s) => $s['staff_id'], $newStaffList ?: []);
-
-            // Remove staff no longer present
-            $toRemove = array_diff($existingIds, $newIds);
-            if (!empty($toRemove)) {
-                $store->staff()->whereIn('user_id', $toRemove)->delete();
-            }
-
-            // Add new staff and update roles for existing
-            foreach ($newStaffList as $staffRecord) {
-                $staffId = $staffRecord['staff_id'];
-                $roleId = $staffRecord['role_id'] ?? null;
-
-                if (in_array($staffId, $existingIds)) {
-                    $store->staff()->where('user_id', $staffId)->update(['role_id' => $roleId]);
-                } else {
-                    $store->staff()->create(['user_id' => $staffId, 'role_id' => $roleId]);
-                }
-            }
 
             DB::commit();
             return response()->json($store);
@@ -293,6 +254,40 @@ class StoreController extends Controller
         DB::table('store_products')->insert($data);
 
         return response()->json(['message' => 'Product added to store inventory', 'data' => $data], 200);
+    }
+
+    public function addMember(Request $request, Store $store)
+    {
+        $user = Auth::user();
+
+        $data = $request->validate([
+            'user' => 'required',
+            'role' => 'required|exists:roles,id'
+        ]);
+
+        $userInput = $data['user'];
+        $userModel = User::where('email', $userInput)
+            ->orWhere('phone', $userInput)
+            ->orWhere('unique_id', $userInput)
+            ->first();
+
+        if (!$userModel) {
+            // send invitation email
+            // 
+            // 
+            return response()->json(['message' => 'Member not found but invited successfully!']);
+        }
+
+        if ($store->staff()->where('user_id', $userModel->id)->exists()) {
+            return response()->json([
+                'message' => 'User already a member of this store'
+            ], 422);
+        }
+
+        $storeUserData = ['store_id' => $store['id'], 'user_id' => $userModel['id'], 'role_id' => $data['role']];
+        $store->staff()->create($storeUserData);
+
+        return response()->json(['message' => 'Member added successfully!']);
     }
 
     public function metrics()
