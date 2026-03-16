@@ -7,16 +7,23 @@ use App\Models\Store\Inventory\Inventory;
 use App\Models\Store\Sale\Sale;
 use App\Models\Store\StoreUser;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
 class Store extends Model
 {
     protected $guarded = [];
 
-    protected $appends = ['image_url', 'current_inventory_value'];
+    protected $appends = ['image_url', 'can_edit', 'current_inventory_value'];
 
     public function getImageUrlAttribute(): string
     {
         return  env('APP_URL') . '/storage/' . ($this->image ? $this->image : 'profiles/default-user.png');
+    }
+
+    public function getCanEditAttribute(): bool
+    {
+        $user = Auth::user();
+        return $this->owner_id === $user->id || $this->manager_id === $user->id;
     }
 
     public function owner()

@@ -29,6 +29,7 @@ class StoreResource extends JsonResource
             'owner' => $this->owner,
             'current_inventory_count' => $this->getCurrentInventoryCountAttribute(),
             'current_inventory_value' => $this->getCurrentInventoryValueAttribute(),
+            'can_edit' => $this->getCanEditAttribute(),
             'low_stock_items_count' => $this->getLowStockItemsCountAttribute(),
             'inventories' => $this->inventories()->with(['product'])->get(),
             'manager_id' => $this->manager_id,
