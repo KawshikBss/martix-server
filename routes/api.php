@@ -67,6 +67,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/toggle-status/{id}', [StoreController::class, 'toggleStatus']);
         Route::delete('/{id}', [StoreController::class, 'destroy']);
         Route::post('/{store}/products/add', [StoreController::class, 'addProduct']);
+        Route::post('/{store}/members/add', [StoreController::class, 'addMember']);
     });
 
     Route::group(['prefix' => 'products'], function () {
