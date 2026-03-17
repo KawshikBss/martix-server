@@ -304,7 +304,7 @@ class StoreController extends Controller
             'total_stores' => $totalStores,
             'active_stores' => $activeStores,
             'inactive_stores' => $inactiveStores,
-            'average_inventory_per_store' => $averageInventoryPerStore
+            'average_inventory_per_store' => ($averageInventoryPerStore ?? 0) . ' units'
         ]);
     }
 

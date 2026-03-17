@@ -365,11 +365,11 @@ class SaleController extends Controller
         $totalRefunded = (clone $sales)->where('status', 'refunded')->sum('grand_total');
         $netRevenue = $totalSales - $totalRefunded;
         return response()->json([
-            'total_sales' => $totalSales,
-            'total_transactions' => $totalTransactions,
-            'avg_ticket_value' => $avgTicketValue,
-            'total_refunded' => $totalRefunded,
-            'net_revenue' => $netRevenue
+            'total_sales' => number_format((float) ($totalSales ?? 0), 2, '.', '') . '$',
+            'total_transactions' => $totalTransactions ?? 0,
+            'avg_ticket_value' => number_format((float) ($avgTicketValue ?? 0), 2, '.', '') . '$',
+            'total_refunded' => number_format((float) ($totalRefunded ?? 0), 2, '.', '') . '$',
+            'net_revenue' => number_format((float) ($netRevenue ?? 0), 2, '.', '') . '$'
         ]);
     }
 
@@ -389,7 +389,7 @@ class SaleController extends Controller
             'total_completed' => $totalCompleted,
             'total_cancelled' => $totalCancelled,
             'total_due' => $totalDue,
-            'total_due_amount' => $totalDueAmount,
+            'total_due_amount' => number_format((float) ($totalDueAmount ?? 0), 2, '.', '') . '$',
         ]);
     }
 

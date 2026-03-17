@@ -31,11 +31,11 @@ class DashboardController extends Controller
             ->first();
 
         return response()->json([
-            'sales_today' => $salesToday,
-            'orders_today' => $ordersToday,
-            'pending_orders' => $pendingOrders,
-            'total_due_today' => $totalDueToday,
-            'low_stock_items' => $lowStockItems,
+            'sales_today' => ($salesToday ?? 0) . '$',
+            'orders_today' => $ordersToday ?? 'None',
+            'pending_orders' => $pendingOrders ?? 'None',
+            'total_due_today' => ($totalDueToday ?? 0) . '$',
+            'low_stock_items' => $lowStockItems ?? 'None',
             'most_sold_product' => $mostSoldProduct ? [
                 'id' => $mostSoldProduct->id,
                 'name' => $mostSoldProduct->name,

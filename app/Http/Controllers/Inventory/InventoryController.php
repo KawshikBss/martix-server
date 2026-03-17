@@ -385,11 +385,11 @@ class InventoryController extends Controller
 
         return response()->json([
             'total_active_items' => $totalActiveItems,
-            'total_inventory_value' => $totalInventoryValue,
-            'low_stock_items' => $lowStockItems,
-            'out_of_stock_items' => $outOfStockItems,
-            'expiring_soon_items' => $expiringSoonItems,
-            'expired_items' => $expiredItems,
+            'total_inventory_value' => ($totalInventoryValue ?? 0) . '$',
+            'low_stock_items' => ($lowStockItems ?? 0) . ' units',
+            'out_of_stock_items' => ($outOfStockItems ?? 0) . ' units',
+            'expiring_soon_items' => ($expiringSoonItems ?? 0) . ' units',
+            'expired_items' => ($expiredItems ?? 0) . ' units',
         ]);
     }
 
@@ -410,8 +410,8 @@ class InventoryController extends Controller
             'total_transfers' => $totalTransfers,
             'total_completed' => $totalCompleted,
             'total_pending' => $totalPending,
-            'total_transfers_quantity' => $totalTransfersQuantity,
-            'total_transfers_value' => $totalTransfersValue,
+            'total_transfers_quantity' => ($totalTransfersQuantity ?? 0) . ' units',
+            'total_transfers_value' => ($totalTransfersValue ?? 0) . '$',
         ]);
     }
 
@@ -426,11 +426,11 @@ class InventoryController extends Controller
         $netStockChange = $stockAdded + $stockRemoved;
 
         return response()->json([
-            'total_movements' => $totalMovements,
-            'stock_added' => $stockAdded,
-            'stock_removed' => $stockRemoved,
-            'adjustments' => $adjustments,
-            'net_stock_change' => $netStockChange,
+            'total_movements' => ($totalMovements ?? 0) . ' units',
+            'stock_added' => ($stockAdded ?? 0) . ' units',
+            'stock_removed' => abs($stockRemoved ?? 0) . ' units',
+            'adjustments' => ($adjustments ?? 0) . ' units',
+            'net_stock_change' => ($netStockChange ?? 0) . ' units',
         ]);
     }
 
