@@ -13,7 +13,7 @@ class Product extends Model
 {
     protected $guarded = [];
 
-    protected $appends = ['image_url', 'variation_meta', 'current_stock_quantity', 'min_selling_price', 'max_selling_price', 'stock_status'];
+    protected $appends = ['image_url', 'variation_meta', 'current_stock_quantity', 'min_selling_price', 'max_selling_price', 'stock_status', 'total_sales'];
 
     protected $casts = [
         'created_at' => 'datetime:d-m-Y',
@@ -87,5 +87,13 @@ class Product extends Model
     public function saleItems()
     {
         return $this->hasMany(SaleItem::class);
+    }
+
+    public function getTotalSalesAttribute(): float
+    {
+        $productIds = $this->variants()->pluck('id')->push($this->id);
+
+        return (float) SaleItem::whereIn('product_id', $productIds)
+            ->sum('total');
     }
 }
