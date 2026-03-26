@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Inventory\InventoryController;
+use App\Http\Controllers\NotificationsController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SaleController;
@@ -118,5 +119,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/{sale}/complete', [SaleController::class, 'complete']);
         Route::post('/{sale}/cancel', [SaleController::class, 'cancel']);
         Route::post('/{sale}/refund', [SaleController::class, 'refund']);
+    });
+
+
+    Route::group(['prefix' => 'notifications'], function () {
+        Route::get('/', [NotificationsController::class, 'index']);
+        Route::get('/unread-count', [NotificationsController::class, 'unreadCount']);
     });
 });
