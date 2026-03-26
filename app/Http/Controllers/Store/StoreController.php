@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Store;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Store\StoreCollection;
 use App\Http\Resources\Store\StoreResource;
+use App\Models\Role;
 use App\Models\Store;
 use App\Models\Store\Inventory\Inventory;
 use App\Models\Store\Inventory\InventoryTransfer;
 use App\Models\Store\Sale\Sale;
+use App\Models\Store\StoreUser;
 use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
@@ -171,6 +173,17 @@ class StoreController extends Controller
         try {
             $store = $user->stores()->create($data);
 
+            if ($data['manager_id'] != null) {
+                $manager = User::find($data['manager_id']);
+                $role = Role::where('name', 'manager')->first();
+
+                $storeUserData = ['store_id' => $store['id'], 'user_id' => $manager['id'], 'role_id' => $role['id']];
+                $store->staff()->create($storeUserData);
+            }
+
+            $role = Role::where('name', 'owner')->first();
+            $store->staff()->create(['store_id' => $store['id'], 'user_id' => $user['id'], 'role_id' => $role['id']]);
+
             DB::commit();
 
             return response()->json($store, 201);
@@ -206,6 +219,11 @@ class StoreController extends Controller
         DB::beginTransaction();
         try {
             $store->update($data);
+
+            if ($data['manager_id'] != null) {
+                $role = Role::where('name', 'manager')->first();
+                StoreUser::updateOrCreate(['store_id' => $id, 'role_id' => $role['id']], ['user_id' => $data['manager_id']]);
+            }
 
             DB::commit();
             return response()->json($store);
