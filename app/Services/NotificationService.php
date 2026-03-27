@@ -18,12 +18,13 @@ class NotificationService
         $notificationData['action_url'] = '/dashboard/inventory/' . $data['inventory']['id'];
         $notificationData['reference_type'] = "inventory";
         $notificationData['reference_id'] = $data['inventory']['id'];
+        $notificationData['type'] = $data['type'];
 
         switch ($data['type']) {
             case 'low_stock':
                 $notificationData['title'] = 'Low Stock';
                 $notificationData['messge'] = $productName . ' is running low.';
-                $notificationData['priority'] = 'high';
+                $notificationData['priority'] = 'medium';
                 break;
             case 'out_of_stock':
                 $notificationData['title'] = 'Out of Stock';
