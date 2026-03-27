@@ -11,7 +11,7 @@ class InventoryNotification extends Notification
 {
     use Queueable;
 
-    private $type, $data;
+    private $data;
 
     /**
      * Create a new notification instance.
