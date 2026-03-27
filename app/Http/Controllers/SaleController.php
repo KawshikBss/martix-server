@@ -201,6 +201,19 @@ class SaleController extends Controller
                             'inventory' => $inventory
                         ], $recipients);
                     }
+                } else {
+                    $users = $sale->store->staff()->whereHas('role', function ($q) {
+                        $q->where('name', 'manager');
+                    })->get()->pluck('user');
+
+                    $recipients = $users->where('id', '!=', $user->id);
+
+                    $this->notificationService->notifySaleStatus([
+                        'type' => 'create',
+                        'sale_number' => $saleNumber,
+                        'sale' => $sale,
+                        'performed_by' => $user,
+                    ], $recipients);
                 }
             }
             DB::commit();
@@ -321,6 +334,19 @@ class SaleController extends Controller
             'status' => 'completed'
         ]);
 
+        $users = $sale->store->staff()->whereHas('role', function ($q) {
+            $q->whereIn('name', ['owner', 'manager']);
+        })->get()->pluck('user');
+
+        $recipients = $users->where('id', '!=', $user->id);
+
+        $this->notificationService->notifySaleStatus([
+            'type' => 'complete',
+            'sale_number' => $sale['sale_number'],
+            'sale' => $sale,
+            'performed_by' => $user,
+        ], $recipients);
+
         return response()->json($sale);
     }
 
@@ -338,6 +364,21 @@ class SaleController extends Controller
         $sale->update([
             'status' => 'canceled'
         ]);
+
+        $user = Auth::user();
+
+        $users = $sale->store->staff()->whereHas('role', function ($q) {
+            $q->whereIn('name', ['owner', 'manager']);
+        })->get()->pluck('user');
+
+        $recipients = $users->where('id', '!=', $user->id);
+
+        $this->notificationService->notifySaleStatus([
+            'type' => 'cancel',
+            'sale_number' => $sale['sale_number'],
+            'sale' => $sale,
+            'performed_by' => $user,
+        ], $recipients);
 
         return response()->json($sale);
     }
@@ -377,6 +418,21 @@ class SaleController extends Controller
         $sale->update([
             'status' => 'refunded'
         ]);
+
+        $user = Auth::user();
+
+        $users = $sale->store->staff()->whereHas('role', function ($q) {
+            $q->whereIn('name', ['owner', 'manager']);
+        })->get()->pluck('user');
+
+        $recipients = $users->where('id', '!=', $user->id);
+
+        $this->notificationService->notifySaleStatus([
+            'type' => 'refund',
+            'sale_number' => $sale['sale_number'],
+            'sale' => $sale,
+            'performed_by' => $user,
+        ], $recipients);
 
         return response()->json($sale);
     }

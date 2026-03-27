@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Store\Inventory\Inventory;
 use App\Models\Store\Inventory\InventoryMovement;
 use App\Models\Store\Inventory\InventoryTransfer;
+use App\Services\NotificationService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,6 +14,12 @@ use Illuminate\Support\Facades\DB;
 
 class InventoryController extends Controller
 {
+    private $notificationService;
+
+    public function __construct()
+    {
+        $this->notificationService = new NotificationService();
+    }
     public function index(Request $request)
     {
         $user = Auth::user();
@@ -190,7 +197,7 @@ class InventoryController extends Controller
             ]);
 
 
-            InventoryTransfer::create([
+            $transfer = InventoryTransfer::create([
                 'transfer_number' => 'TR-' . strtoupper(uniqid()),
                 'source_inventory_id' => $inventory->id,
                 'destination_inventory_id' => $receivingInventory->id,
@@ -203,6 +210,31 @@ class InventoryController extends Controller
             DB::rollback();
             return response()->json(['error' => 'Failed to transfer inventory'], 500);
         }
+        $sourceUsers = $inventory->store->staff()->whereHas('role', function ($q) {
+            $q->whereIn('name', ['owner', 'manager']);
+        })->get()->pluck('user');
+
+        $sourceRecipients = $sourceUsers->where('id', '!=', $user->id);
+
+        $this->notificationService->notifyTransferStatus([
+            'type' => 'receive',
+            'transfer' => $transfer,
+            'source_inventory' => $inventory,
+            'destination_inventory' => $receivingInventory,
+        ], $sourceRecipients);
+
+        $destinationUsers = $receivingInventory->store->staff()->whereHas('role', function ($q) {
+            $q->whereIn('name', ['owner', 'manager']);
+        })->get()->pluck('user');
+
+        $destinationRecipients = $destinationUsers->where('id', '!=', $user->id);
+
+        $this->notificationService->notifyTransferStatus([
+            'type' => 'create',
+            'transfer' => $transfer,
+            'source_inventory' => $inventory,
+            'destination_inventory' => $receivingInventory,
+        ], $destinationRecipients);
 
         return response()->json(['message' => 'Inventory transferred successfully']);
     }
@@ -343,7 +375,11 @@ class InventoryController extends Controller
         $inventory = Inventory::where('product_id', $data['product'])->where('store_id', $data['store'])->first();
 
         if (!$inventory) {
-            return response()->json(['message' => 'Inventory not found'], 404);
+            $inventory = Inventory::create([
+                'product_id' => $data['product'],
+                'store_id' => $data['store'],
+                'quantity' => 0,
+            ]);
         }
 
         switch ($data['adjustment_type']) {
@@ -359,7 +395,7 @@ class InventoryController extends Controller
         }
 
         $inventory->save();
-        InventoryMovement::create([
+        $inventoryMovement = InventoryMovement::create([
             'inventory_id' => $inventory['id'],
             'type' => 'adjustment',
             'quantity' => $data['quantity'] * ($data['adjustment_type'] === 'decrease' ? -1 : 1),
@@ -368,6 +404,19 @@ class InventoryController extends Controller
             'performed_by_id' => $user->id,
             'note' => $data['notes'] ?? null,
         ]);
+        $users = $inventory->store->staff()->whereHas('role', function ($q) {
+            $q->whereIn('name', ['owner', 'manager']);
+        })->get()->pluck('user');
+
+        $recipients = $users->where('id', '!=', $user->id);
+
+        $this->notificationService->notifyInventoryAdjustment([
+            'type' => $data['adjustment_type'],
+            'inventory' => $inventory,
+            'inventory_movement' => $inventoryMovement,
+            'quantity' => $data['quantity'],
+            'performed_by' => $user,
+        ], $recipients);
 
         return response()->json(['message' => 'Inventory adjusted successfully']);
     }
