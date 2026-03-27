@@ -16,7 +16,11 @@ class NotificationsController extends Controller
             ->latest()
             ->paginate(10);
 
-        return NotificationResource::collection($notifications);
+        return response()->json([
+            'data' => NotificationResource::collection($notifications),
+            'current_page' => $notifications->currentPage(),
+            'last_page' => $notifications->lastPage(),
+        ]);
     }
 
     public function unreadCount()
