@@ -26,4 +26,20 @@ class NotificationsController extends Controller
             'count' => $count
         ]);
     }
+
+    public function markAsRead($id)
+    {
+        $notification = Auth::user()
+            ->notifications()
+            ->where('id', $id)
+            ->firstOrFail();
+
+        if (!$notification->read_at) {
+            $notification->markAsRead();
+        }
+
+        return response()->json([
+            'message' => 'Marked as read'
+        ]);
+    }
 }
