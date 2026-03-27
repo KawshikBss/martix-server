@@ -6,6 +6,8 @@ use App\Models\Store\Inventory\Inventory;
 use App\Models\Store\Inventory\InventoryMovement;
 use App\Models\Store\Product;
 use App\Models\Store\Sale\Sale;
+use App\Notifications\InventoryNotification;
+use App\Services\NotificationService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -14,6 +16,12 @@ use Illuminate\Support\Facades\DB;
 
 class SaleController extends Controller
 {
+    private $notificationService;
+
+    public function __construct()
+    {
+        $this->notificationService = new NotificationService();
+    }
 
     public function index(Request $request)
     {
@@ -174,6 +182,25 @@ class SaleController extends Controller
                     InventoryMovement::create($inventoryMovementData);
                     $inventory = Inventory::find($item['inventory_id']);
                     $inventory->decrement('quantity', $item['quantity']);
+
+                    if ($inventory['quantity'] <= $inventory['reorder_level']) {
+                        $users = $inventory->store->staff()->whereHas('role', function ($q) {
+                            $q->whereIn('name', ['owner', 'manager']);
+                        })->get()->pluck('user');
+
+                        $recipients = $users->where('id', '!=', $user->id);
+                        $recipients[] = $user;
+
+                        $notificationType = 'low_stock';
+                        if ($inventory['quantity'] <= 0) {
+                            // asdasdasd
+                            $notificationType = 'out_of_stock';
+                        }
+                        $this->notificationService->notifyInventoryStatus([
+                            'type' => $notificationType,
+                            'inventory' => $inventory
+                        ], $recipients);
+                    }
                 }
             }
             DB::commit();
