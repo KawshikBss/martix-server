@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Resources\NotificationResource;
 
 class NotificationsController extends Controller
 {
@@ -15,7 +16,7 @@ class NotificationsController extends Controller
             ->latest()
             ->paginate(10);
 
-        return response()->json($notifications);
+        return NotificationResource::collection($notifications);
     }
 
     public function unreadCount()
