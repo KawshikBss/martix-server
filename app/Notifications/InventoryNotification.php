@@ -16,9 +16,8 @@ class InventoryNotification extends Notification
     /**
      * Create a new notification instance.
      */
-    public function __construct($type, $data)
+    public function __construct($data)
     {
-        $this->type = $type;
         $this->data = $data;
     }
 
@@ -45,28 +44,7 @@ class InventoryNotification extends Notification
 
     public function toDatabase($notifiable)
     {
-
-        return match ($this->type) {
-            'low_stock' => [
-                'type' => 'low_stock',
-                'title' => 'Low Stock Alert',
-                'message' => $this->data['product_name'] . ' is running low',
-                'inventory_id' => $this->data['inventory_id'],
-            ],
-
-            'out_of_stock' => [
-                'type' => 'out_of_stock',
-                'title' => 'Out of Stock',
-                'message' => $this->data['product_name'] . ' is out of stock',
-                'inventory_id' => $this->data['inventory_id'],
-            ],
-
-            default => [
-                'type' => 'unknown',
-                'title' => 'Notification',
-                'message' => 'Something happened'
-            ]
-        };
+        return $this->data;
     }
 
     /**
