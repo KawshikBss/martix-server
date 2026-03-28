@@ -25,12 +25,12 @@ class NotificationService
         switch ($data['type']) {
             case 'low_stock':
                 $notificationData['title'] = 'Low Stock';
-                $notificationData['messge'] = $productName . ' is running low in ' . $storeName;
+                $notificationData['message'] = $productName . ' is running low in ' . $storeName;
                 $notificationData['priority'] = 'medium';
                 break;
             case 'out_of_stock':
                 $notificationData['title'] = 'Out of Stock';
-                $notificationData['messge'] = $productName . ' is out of stock in ' . $storeName;
+                $notificationData['message'] = $productName . ' is out of stock in ' . $storeName;
                 $notificationData['priority'] = 'high';
                 break;
         }
