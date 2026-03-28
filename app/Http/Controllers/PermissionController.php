@@ -24,10 +24,12 @@ class PermissionController extends Controller
     {
         $request->validate([
             'name' => 'required|string|unique:permissions,name',
+            'group' => 'nullable|string',
         ]);
 
         $permission = Permission::create([
             'name' => $request->name,
+            'group' => $request->group,
         ]);
 
         return response()->json($permission, 201);
@@ -37,10 +39,12 @@ class PermissionController extends Controller
     {
         $request->validate([
             'name' => 'required|string|unique:permissions,name,' . $permission->id,
+            'group' => 'nullable|string',
         ]);
 
         $permission->update([
             'name' => $request->name,
+            'group' => $request->group,
         ]);
 
         return response()->json($permission);
