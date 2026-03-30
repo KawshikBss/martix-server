@@ -75,19 +75,19 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/', [ProductController::class, 'index']);
         Route::get('/top-selling', [ProductController::class, 'topProducts']);
         Route::get('/category-graph', [ProductController::class, 'categoryGraph']);
-        Route::get('/{id}', [ProductController::class, 'show']);
-        Route::post('/', [ProductController::class, 'store']);
-        Route::post('/update/{id}', [ProductController::class, 'update']);
-        Route::delete('/{id}', [ProductController::class, 'destroy']);
+        Route::get('/{id}', [ProductController::class, 'show'])->middleware('permission:view_product_details');
+        Route::post('/', [ProductController::class, 'store'])->middleware('permission:create_product');
+        Route::post('/update/{id}', [ProductController::class, 'update'])->middleware('permission:update_product');
+        Route::delete('/{id}', [ProductController::class, 'destroy'])->middleware('permission:delete_product');
     });
 
     Route::group(['prefix' => 'inventories'], function () {
         Route::get('/', [InventoryController::class, 'index']);
         Route::post('/find', [InventoryController::class, 'find']);
-        Route::post('/transfer', [InventoryController::class, 'transfer']);
+        Route::post('/transfer', [InventoryController::class, 'transfer'])->middleware('permission:create_transfer');
         Route::get('/transfers', [InventoryController::class, 'transfers']);
         Route::get('/movements', [InventoryController::class, 'movements']);
-        Route::post('/adjustment', [InventoryController::class, 'adjustment']);
+        Route::post('/adjustment', [InventoryController::class, 'adjustment'])->middleware('permission:adjust_inventory');
         Route::get('/metrics', [InventoryController::class, 'metrics']);
         Route::get('/transfer-metrics', [InventoryController::class, 'transferMetrics']);
         Route::get('/movement-metrics', [InventoryController::class, 'movementMetrics']);
@@ -114,11 +114,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/status-graph', [SaleController::class, 'statusGraph']);
         Route::get('/payment-status-graph', [SaleController::class, 'paymentStatusGraph']);
         Route::get('/payment-graph', [SaleController::class, 'paymentMethodGraph']);
-        Route::get('/{sale}', [SaleController::class, 'show']);
-        Route::post('/', [SaleController::class, 'store']);
-        Route::post('/{sale}/complete', [SaleController::class, 'complete']);
-        Route::post('/{sale}/cancel', [SaleController::class, 'cancel']);
-        Route::post('/{sale}/refund', [SaleController::class, 'refund']);
+        Route::get('/{sale}', [SaleController::class, 'show'])->middleware('permission:view_sale_details');
+        Route::post('/', [SaleController::class, 'store'])->middleware('permission:create_sale');
+        Route::post('/{sale}/complete', [SaleController::class, 'complete'])->middleware('permission:create_sale');
+        Route::post('/{sale}/cancel', [SaleController::class, 'cancel'])->middleware('permission:cancel_sale');
+        Route::post('/{sale}/refund', [SaleController::class, 'refund'])->middleware('permission:refund_sale');
     });
 
 
