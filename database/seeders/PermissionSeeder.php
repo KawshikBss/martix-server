@@ -39,7 +39,7 @@ class PermissionSeeder extends Seeder
                 'group' => 'sales'
             ],
 
-            [
+            /* [
                 'name' => 'create_order',
                 'group' => 'orders'
             ],
@@ -62,7 +62,7 @@ class PermissionSeeder extends Seeder
             [
                 'name' => 'refund_order',
                 'group' => 'orders'
-            ],
+            ], */
 
             [
                 'name' => 'view_inventory',
