@@ -40,12 +40,12 @@ class RolePermissionSeeder extends Seeder
             'add_payment',
 
             // Orders
-            'create_order',
+            /* 'create_order',
             'view_orders',
             'view_order_details',
             'update_order',
             'cancel_order',
-            'refund_order',
+            'refund_order', */
 
             // Inventory
             'view_inventory',
@@ -100,9 +100,9 @@ class RolePermissionSeeder extends Seeder
             'add_payment',
 
             // Orders (limited)
-            'view_orders',
+            /* 'view_orders',
             'view_order_details',
-            'update_order',
+            'update_order', */
 
             // Inventory
             'view_inventory',
