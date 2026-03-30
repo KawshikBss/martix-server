@@ -20,23 +20,52 @@ class PermissionMiddleware
     {
         $user = Auth::user();
 
-        // You MUST decide how store is resolved
-        $store_id = $request->store_id; // or from route
-        $store = Store::find($store_id);
-        if (!$store) {
+        $store = $this->resolveStore($request);
+
+        // If permission requires store but none found
+        if ($permission && !$store) {
             return response()->json([
-                'error' => 'Store not found'
-            ], 404);
+                'error' => 'Store context required'
+            ], 400);
         }
 
-        $service = new PermissionService();
+        if ($store) {
+            $service = new PermissionService();
 
-        if (!$service->hasPermission($user, $store, $permission)) {
-            return response()->json([
-                'error' => 'User is not authorized to perform this action'
-            ], 403);
+            if (!$service->hasPermission($user, $store, $permission)) {
+                return response()->json([
+                    'error' => 'User is not authorized to perform this action.'
+                ], 403);
+            }
         }
 
         return $next($request);
+    }
+
+    private function resolveStore(Request $request)
+    {
+        // 1. From route (BEST)
+        if ($request->route('store')) {
+            return $request->route('store');
+        }
+
+        // 2. From store_id (fallback)
+        if ($request->store_id) {
+            return Store::find($request->store_id);
+        }
+
+        // 3. From Sale
+        if ($request->route('sale')) {
+            return $request->route('sale')->store;
+        }
+
+        // 4. From Product
+        if ($request->route('product')) {
+            return $request->route('product')->store;
+        }
+
+        // Add more as needed...
+
+        return null;
     }
 }
