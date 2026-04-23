@@ -3,6 +3,7 @@
 namespace App\Models\Store;
 
 use App\Models\Category;
+use App\Models\Store;
 use App\Models\Store\Inventory\Inventory;
 use App\Models\Store\Product\ProductOption;
 use App\Models\Store\Sale\SaleItem;
@@ -43,6 +44,11 @@ class Product extends Model
     public function variants()
     {
         return $this->hasMany(Product::class, 'parent_id')->with(['category']);
+    }
+
+    public function store()
+    {
+        return $this->belongsTo(Store::class);
     }
 
     public function inventories()

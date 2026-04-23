@@ -6,6 +6,8 @@ use App\Models\Store\Customer;
 use App\Models\Store\Inventory\Inventory;
 use App\Models\Store\Sale\Sale;
 use App\Models\Store\StoreUser;
+use App\Models\Subscription\Subscription;
+use App\Models\Subscription\UsageLog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 
@@ -71,5 +73,15 @@ class Store extends Model
     public function sales()
     {
         return $this->hasMany(Sale::class);
+    }
+
+    public function subscription()
+    {
+        return $this->hasOne(Subscription::class)->with('plan.limits');
+    }
+
+    public function usageLogs()
+    {
+        return $this->hasMany(UsageLog::class);
     }
 }
