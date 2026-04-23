@@ -167,6 +167,7 @@ class StoreController extends Controller
         }
 
         $data['image'] = $imagePath;
+        $data['is_active'] = false;
 
         DB::beginTransaction();
 
