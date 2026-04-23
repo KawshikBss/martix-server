@@ -7,6 +7,7 @@ use App\Models\Store;
 use App\Models\Store\Inventory\Inventory;
 use App\Models\Store\Inventory\InventoryMovement;
 use App\Models\Store\Product;
+use App\Models\Subscription\UsageLog;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -148,14 +149,14 @@ class ProductController extends Controller
         }
 
 
-        $products = $products->with(['category', 'variants'])->paginate(10);
+        $products = $products->with(['category', 'variants', 'store'])->paginate(10);
         return response()->json($products);
     }
 
     public function show($id)
     {
         $user = Auth::user();
-        $product = $user->products()->with(['owner', 'variants', 'variants.inventories', 'inventories', 'variants.parent'])->findOrFail($id);
+        $product = $user->products()->with(['owner', 'variants', 'variants.inventories', 'inventories', 'variants.parent', 'store'])->findOrFail($id);
         return response()->json($product);
     }
 
@@ -178,6 +179,7 @@ class ProductController extends Controller
             'is_active' => 'sometimes|boolean',
             'variations' => 'nullable|array',
             'product_stocks' => 'nullable|array',
+            'store_id' => 'nullable|exists:stores,id',
         ]);
 
         if ($validator->fails()) {
@@ -253,6 +255,16 @@ class ProductController extends Controller
                 }
             }
 
+            UsageLog::insert([
+                [
+                    'store_id' => $data['store_id'],
+                    'key' => 'create_product',
+                    'used' => 1,
+                    'period_start' => Carbon::now()->startOfMonth(),
+                    'period_end' => Carbon::now()->endOfMonth(),
+                ],
+            ]);
+
             DB::commit();
 
             return response()->json($product, 201);
@@ -281,6 +293,7 @@ class ProductController extends Controller
             'is_variation' => 'sometimes|boolean',
             'is_active' => 'sometimes|boolean',
             'variations' => 'nullable|array',
+            'store_id' => 'nullable|exists:stores,id',
             // 'product_stocks' => 'nullable|array',
         ]);
 
