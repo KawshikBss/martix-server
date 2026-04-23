@@ -40,6 +40,7 @@ class StoreResource extends JsonResource
             'updated_at' => $this->updated_at->diffForHumans(),
             'today_sales' => $this->sales()->where('created_at', now()->day)->sum('grand_total'),
             'monthly_sales' => $this->sales()->whereBetween('created_at', [now()->copy()->startOfMonth(), now()->copy()->endOfMonth()])->sum('grand_total'),
+            'subscription' => $this->subscription,
         ];
     }
 }
