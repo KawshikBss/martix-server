@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\CheckLimit;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\PermissionMiddleware;
@@ -23,9 +24,10 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
             PermissionMiddleware::class,
+            CheckLimit::class,
         ]);
 
-        $middleware->alias(['permission' => PermissionMiddleware::class]);
+        $middleware->alias(['permission' => PermissionMiddleware::class, 'limit' => CheckLimit::class]);
 
         /* $middleware->api([
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
