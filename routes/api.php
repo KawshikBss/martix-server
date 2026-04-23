@@ -10,6 +10,7 @@ use App\Http\Controllers\Store\CategoryController;
 use App\Http\Controllers\Store\CustomerController;
 use App\Http\Controllers\Store\ProductController;
 use App\Http\Controllers\Store\StoreController;
+use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -75,9 +76,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/', [ProductController::class, 'index']);
         Route::get('/top-selling', [ProductController::class, 'topProducts']);
         Route::get('/category-graph', [ProductController::class, 'categoryGraph']);
-        Route::get('/{id}', [ProductController::class, 'show'])->middleware('permission:view_product_details');
-        Route::post('/', [ProductController::class, 'store'])->middleware('permission:create_product');
-        Route::post('/update/{id}', [ProductController::class, 'update'])->middleware('permission:update_product');
+        // Route::get('/{id}', [ProductController::class, 'show'])->middleware('permission:view_product_details');
+        Route::get('/{id}', [ProductController::class, 'show']);
+        Route::post('/', [ProductController::class, 'store'])->middleware('permission:create_product')->middleware('limit:create_product');
+        Route::post('/update/{id}', [ProductController::class, 'update']);
         Route::delete('/{id}', [ProductController::class, 'destroy'])->middleware('permission:delete_product');
     });
 
@@ -126,5 +128,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/', [NotificationsController::class, 'index']);
         Route::get('/unread-count', [NotificationsController::class, 'unreadCount']);
         Route::get('/{id}/read', [NotificationsController::class, 'markAsRead']);
+    });
+
+    Route::group(['prefix' => 'subscriptions'], function () {
+        Route::get('/plans', [SubscriptionController::class, 'plans']);
+        Route::post('/', [SubscriptionController::class, 'subscribe']);
     });
 });
